@@ -1,0 +1,4931 @@
+设计模式 观察者模式
+
+先来看看观察者模式的定义：
+
+定义了对象之间的一对多的依赖，这样一来，当一个对象改变时，它的所有的依赖者都会收到通知并自动更新。
+
+好了，对于定义的理解总是需要实例来解析的，如今的微信服务号相当火啊，下面就以微信服务号为背景，给大家介绍观察者模式。
+
+看一张图：
+
+其中每个使用者都有上图中的3条线，为了使图片清晰省略了。
+
+如上图所示，服务号就是我们的主题，使用者就是观察者。现在我们明确下功能：
+
+1、服务号就是主题，业务就是推送消息
+
+2、观察者只需要订阅主题，只要有新的消息就会送来
+
+3、当不想要此主题消息时，取消订阅
+
+4、只要服务号还在，就会一直有人订阅
+
+好了，现在我们来看看观察者模式的类图：
+
+接下来就是代码时间了，我们模拟一个微信3D彩票服务号，和一些订阅者。
+
+首先开始写我们的主题接口，和观察者接口：
+
+    package com.zhy.pattern.observer;
+     
+    /**
+     * 主题接口，所有的主题必须实现此接口
+     * 
+     * @author zhy
+     * 
+     */
+    public interface Subject
+    {
+    	/**
+    	 * 注册一个观察者
+    	 * 
+    	 * @param observer
+    	 */
+    	public void registerObserver(Observer observer);
+     
+    	/**
+    	 * 移除一个观察者
+    	 * 
+    	 * @param observer
+    	 */
+    	public void removeObserver(Observer observer);
+     
+    	/**
+    	 * 通知所有的观察着
+    	 */
+    	public void notifyObservers();
+     
+    }
+
+
+    package com.zhy.pattern.observer;
+     
+    /**
+     * @author zhy 所有的观察者需要实现此接口
+     */
+    public interface Observer
+    {
+    	public void update(String msg);
+     
+    }
+
+
+接下来3D服务号的实现类：
+
+    package com.zhy.pattern.observer;
+     
+    import java.util.ArrayList;
+    import java.util.List;
+     
+    public class ObjectFor3D implements Subject
+    {
+    	private List<Observer> observers = new ArrayList<Observer>();
+    	/**
+    	 * 3D彩票的号码
+    	 */
+    	private String msg;
+     
+    	@Override
+    	public void registerObserver(Observer observer)
+    	{
+    		observers.add(observer);
+    	}
+     
+    	@Override
+    	public void removeObserver(Observer observer)
+    	{
+    		int index = observers.indexOf(observer);
+    		if (index >= 0)
+    		{
+    			observers.remove(index);
+    		}
+    	}
+     
+    	@Override
+    	public void notifyObservers()
+    	{
+    		for (Observer observer : observers)
+    		{
+    			observer.update(msg);
+    		}
+    	}
+     
+    	/**
+    	 * 主题更新消息
+    	 * 
+    	 * @param msg
+    	 */
+    	public void setMsg(String msg)
+    	{
+    		this.msg = msg;
+    		
+    		notifyObservers();
+    	}
+     
+    }
+
+
+模拟两个使用者：
+
+    package com.zhy.pattern.observer;
+     
+    public class Observer1 implements Observer
+    {
+     
+    	private Subject subject;
+     
+    	public Observer1(Subject subject)
+    	{
+    		this.subject = subject;
+    		subject.registerObserver(this);
+    	}
+     
+    	@Override
+    	public void update(String msg)
+    	{
+    		System.out.println("observer1 得到 3D 号码  -->" + msg + ", 我要记下来。");
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.observer;
+     
+    public class Observer2 implements Observer
+    {
+    	private Subject subject ; 
+    	
+    	public Observer2(Subject subject)
+    	{
+    		this.subject = subject  ;
+    		subject.registerObserver(this);
+    	}
+    	
+    	@Override
+    	public void update(String msg)
+    	{
+    		System.out.println("observer2 得到 3D 号码 -->" + msg + "我要告诉舍友们。");
+    	}
+    	
+    	
+     
+    }
+
+可以看出：服务号中维护了所有向它订阅消息的使用者，当服务号有新消息时，通知所有的使用者。整个架构是一种松耦合，主题的实现不依赖与使用者，当增加新的使用者时，主题的代码不需要改变；使用者如何处理得到的数据与主题无关；
+
+最后看下测试代码：
+
+    package com.zhy.pattern.observer.test;
+     
+    import com.zhy.pattern.observer.ObjectFor3D;
+    import com.zhy.pattern.observer.Observer;
+    import com.zhy.pattern.observer.Observer1;
+    import com.zhy.pattern.observer.Observer2;
+    import com.zhy.pattern.observer.Subject;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		//模拟一个3D的服务号
+    		ObjectFor3D subjectFor3d = new ObjectFor3D();
+    		//客户1
+    		Observer observer1 = new Observer1(subjectFor3d);
+    		Observer observer2 = new Observer2(subjectFor3d);
+     
+    		subjectFor3d.setMsg("20140420的3D号码是：127" );
+    		subjectFor3d.setMsg("20140421的3D号码是：333" );
+    		
+    	}
+    }
+
+
+输出结果：
+
+    observer1 得到 3D 号码  -->20140420的3D号码是：127, 我要记下来。
+    observer2 得到 3D 号码 -->20140420的3D号码是：127我要告诉舍友们。
+    observer1 得到 3D 号码  -->20140421的3D号码是：333, 我要记下来。
+    observer2 得到 3D 号码 -->20140421的3D号码是：333我要告诉舍友们。
+
+
+对于JDK或者Andorid中都有很多地方实现了观察者模式，比如XXXView.addXXXListenter ， 当然了 XXXView.setOnXXXListener不一定是观察者模式，因为观察者模式是一种一对多的关系，对于setXXXListener是1对1的关系，应该叫回调。
+
+恭喜你学会了观察者模式，上面的观察者模式使我们从无到有的写出，当然了java中已经帮我们实现了观察者模式，借助于java.util.Observable和java.util.Observer。
+
+下面我们使用Java内置的类实现观察者模式：
+
+
+首先是一个3D彩票服务号主题：
+
+    package com.zhy.pattern.observer.java;
+     
+    import java.util.Observable;
+     
+    public class SubjectFor3d extends Observable
+    {
+    	private String msg ; 
+    	
+    	
+    	public String getMsg()
+    	{
+    		return msg;
+    	}
+     
+     
+    	/**
+    	 * 主题更新消息
+    	 * 
+    	 * @param msg
+    	 */
+    	public void setMsg(String msg)
+    	{
+    		this.msg = msg  ;
+    		setChanged();
+    		notifyObservers();
+    	}
+    }
+
+下面是一个双色球的服务号主题：
+
+    package com.zhy.pattern.observer.java;
+     
+    import java.util.Observable;
+     
+    public class SubjectForSSQ extends Observable
+    {
+    	private String msg ; 
+    	
+    	
+    	public String getMsg()
+    	{
+    		return msg;
+    	}
+     
+     
+    	/**
+    	 * 主题更新消息
+    	 * 
+    	 * @param msg
+    	 */
+    	public void setMsg(String msg)
+    	{
+    		this.msg = msg  ;
+    		setChanged();
+    		notifyObservers();
+    	}
+    }
+
+
+最后是我们的使用者：
+
+    package com.zhy.pattern.observer.java;
+     
+    import java.util.Observable;
+    import java.util.Observer;
+     
+    public class Observer1 implements Observer
+    {
+     
+    	public void registerSubject(Observable observable)
+    	{
+    		observable.addObserver(this);
+    	}
+     
+    	@Override
+    	public void update(Observable o, Object arg)
+    	{
+    		if (o instanceof SubjectFor3d)
+    		{
+    			SubjectFor3d subjectFor3d = (SubjectFor3d) o;
+    			System.out.println("subjectFor3d's msg -- >" + subjectFor3d.getMsg());
+    		}
+     
+    		if (o instanceof SubjectForSSQ)
+    		{
+    			SubjectForSSQ subjectForSSQ = (SubjectForSSQ) o;
+    			System.out.println("subjectForSSQ's msg -- >" + subjectForSSQ.getMsg());
+    		}
+    	}
+    }
+
+看一个测试代码：
+
+    package com.zhy.pattern.observer.java;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		SubjectFor3d subjectFor3d = new SubjectFor3d() ;
+    		SubjectForSSQ subjectForSSQ = new SubjectForSSQ() ;
+    		
+    		Observer1 observer1 = new Observer1();
+    		observer1.registerSubject(subjectFor3d);
+    		observer1.registerSubject(subjectForSSQ);
+    		
+    		
+    		subjectFor3d.setMsg("hello 3d'nums : 110 ");
+    		subjectForSSQ.setMsg("ssq'nums : 12,13,31,5,4,3 15");
+    		
+    	}
+    }
+
+
+测试结果：
+
+    subjectFor3d's msg -- >hello 3d'nums : 110 
+    subjectForSSQ's msg -- >ssq'nums : 12,13,31,5,4,3 15
+
+
+可以看出，使用Java内置的类实现观察者模式，代码非常简洁，对了addObserver,removeObserver,notifyObservers都已经为我们实现了，所有可以看出Observable（主题）是一个类，而不是一个接口，基本上书上都对于Java的如此设计抱有反面的态度，觉得Java内置的观察者模式，违法了面向接口编程这个原则，
+但是如果转念想一想，的确你拿一个主题在这写观察者模式（我们自己的实现），接口的思想很好，但是如果现在继续添加很多个主题，每个主题的ddObserver,removeObserver,notifyObservers代码基本都是相同的吧，接口是无法实现代码复用的，而且也没有办法使用组合的模式实现这三个方法的复用，所以我觉得这里把这三个方法在类中实现是合理的。
+
+设计模式 工厂模式
+
+1、静态工厂模式
+
+这个最常见了，项目中的辅助类，TextUtil.isEmpty等，类+静态方法。下面开始详细介绍：略。
+
+2、简单工厂模式
+
+下面开始谈谈卖肉夹馍，最近程序员卖肉夹馍很火，啥时候大牛们都去卖了，我等就崛起了，哈哈。
+
+首先你得有个店：RoujiaMoStore
+
+    package com.zhy.pattern.factory.a;
+     
+    public class RoujiaMoStore
+    {
+     
+    	/**
+    	 * 根据传入类型卖不同的肉夹馍
+    	 * 
+    	 * @param type
+    	 * @return
+    	 */
+    	public RouJiaMo sellRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = null;
+    		
+    		if (type.equals("Suan"))
+    		{
+    			rouJiaMo = new SuanRouJiaMo();
+     
+    		} else if (type.equals("Tian"))
+    		{
+    			rouJiaMo = new TianRouJiaMo();
+    		} else if (type.equals("La"))
+    		{
+    			rouJiaMo = new LaRouJiaMo();
+    		}
+    		
+    		rouJiaMo.prepare();
+    		rouJiaMo.fire();
+    		rouJiaMo.pack();
+    		return rouJiaMo;
+    	}
+     
+    }
+
+
+然后你得有各种风味的馍馍：
+
+    package com.zhy.pattern.factory.a;
+     
+    public abstract class RouJiaMo
+    {
+    	protected String name;
+     
+    	/**
+    	 * 准备工作
+    	 */
+    	public void prepare()
+    	{
+    		System.out.println("揉面-剁肉-完成准备工作");
+    	}
+     
+    	/**
+    	 * 使用你们的专用袋-包装
+    	 */
+    	public void pack()
+    	{
+    		System.out.println("肉夹馍-专用袋-包装");
+    	}
+    	/**
+    	 * 秘制设备-烘烤2分钟
+    	 */
+    	public void fire()
+    	{
+    		System.out.println("肉夹馍-专用设备-烘烤");
+    	}
+    }
+
+
+    package com.zhy.pattern.factory.a;
+     
+    import com.zhy.pattern.factory.a.RouJiaMo;
+     
+    /**
+     * 辣味肉夹馍
+     * 
+     * @author zhy
+     * 
+     */
+    public class LaRouJiaMo extends RouJiaMo
+    {
+    	public LaRouJiaMo()
+    	{
+    		this.name = "辣味肉夹馍";
+    	}
+    }
+
+
+    package com.zhy.pattern.factory.a;
+     
+     
+     
+    /**
+     * 酸味肉夹馍
+     * 
+     * @author zhy
+     * 
+     */
+    public class SuanRouJiaMo extends RouJiaMo
+    {
+    	public SuanRouJiaMo()
+    	{
+    		this.name = "酸味肉夹馍";
+    	}
+    }
+
+
+    package com.zhy.pattern.factory.a;
+     
+     
+     
+    /**
+     * 酸味肉夹馍
+     * 
+     * @author zhy
+     * 
+     */
+    public class TianRouJiaMo extends RouJiaMo
+    {
+    	public TianRouJiaMo()
+    	{
+    		this.name = "甜味肉夹馍";
+    	}
+    }
+
+
+现在这样的设计，虽然可以支持你卖肉夹馍了，但是有点问题，生产馍的种类和你的RoujiaMoStore耦合度太高了，如果增加几种风味，删除几种风味，你得一直修改sellRouJiaMo中的方法，所以我们需要做一定的修改，此时简单工厂模式就能派上用场了。
+
+我们开始写个简单工厂，把产生馍的过程拿出来：
+
+    package com.zhy.pattern.factory.a;
+     
+    public class SimpleRouJiaMoFactroy
+    {
+    	public RouJiaMo createRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = null;
+    		if (type.equals("Suan"))
+    		{
+    			rouJiaMo = new SuanRouJiaMo();
+     
+    		} else if (type.equals("Tian"))
+    		{
+    			rouJiaMo = new TianRouJiaMo();
+    		} else if (type.equals("La"))
+    		{
+    			rouJiaMo = new LaRouJiaMo();
+    		}
+    		return rouJiaMo;
+    	}
+     
+    }
+
+
+然后以组合的方式，让Store来使用：
+
+    package com.zhy.pattern.factory.a;
+     
+    public class RoujiaMoStore
+    {
+    	private SimpleRouJiaMoFactroy factroy;
+     
+    	public RoujiaMoStore(SimpleRouJiaMoFactroy factroy)
+    	{
+    		this.factroy = factroy;
+    	}
+     
+    	/**
+    	 * 根据传入类型卖不同的肉夹馍
+    	 * 
+    	 * @param type
+    	 * @return
+    	 */
+    	public RouJiaMo sellRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = factroy.createRouJiaMo(type);
+    		rouJiaMo.prepare();
+    		rouJiaMo.fire();
+    		rouJiaMo.pack();
+    		return rouJiaMo;
+    	}
+     
+    }
+
+
+好了，现在你随便添加什么种类的馍，删除什么种类的馍就和Store无关了，就是么~人家只负责卖馍么~ 这就是简单工厂模式，当然了，大家也都比较熟悉。
+
+3、工厂方法模式
+
+定义：定义一个创建对象的接口，但由子类决定要实例化的类是哪一个。工厂方法模式把类实例化的过程推迟到子类。
+
+好了，看完定义，下面我们用例子来展示。继续肉夹馍，由于使用了简单工厂模式，肉夹馍生意那个好啊，所以下载决定去西安开个分店，去北京开个分店。既然有分店了，那总店就是抽象的了：
+
+    package com.zhy.pattern.factory.b;
+     
+    public abstract class RoujiaMoStore
+    {
+     
+    	public abstract RouJiaMo createRouJiaMo(String type);
+     
+    	/**
+    	 * 根据传入类型卖不同的肉夹馍
+    	 * 
+    	 * @param type
+    	 * @return
+    	 */
+    	public RouJiaMo sellRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = createRouJiaMo(type);
+    		rouJiaMo.prepare();
+    		rouJiaMo.fire();
+    		rouJiaMo.pack();
+    		return rouJiaMo;
+    	}
+     
+    }
+
+
+然后在开两个分店，这里拿一个代码做演示，其他都一样：
+
+    package com.zhy.pattern.factory.b;
+     
+     
+     
+    /**
+     * 西安肉夹馍店
+     * 
+     * @author zhy
+     * 
+     */
+    public class XianRouJiaMoStore extends RoujiaMoStore
+    {
+     
+    	@Override
+    	public RouJiaMo createRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = null;
+    		if (type.equals("Suan"))
+    		{
+    			rouJiaMo = new XianSuanRouJiaMo();
+     
+    		} else if (type.equals("Tian"))
+    		{
+    			rouJiaMo = new XianTianRouJiaMo();
+    		} else if (type.equals("La"))
+    		{
+    			rouJiaMo = new XianLaRouJiaMo();
+    		}
+    		return rouJiaMo;
+     
+    	}
+     
+    }
+
+
+然后就是各个西安口味的肉夹馍了，这代码就不贴了。可以看出我们把制作肉夹馍的过程以抽象方法的形式让子类去决定了，对照定义：
+
+1、定义了创建对象的一个接口：public abstract RouJiaMo createRouJiaMo(String type);
+
+2、由子类决定实例化的类，可以看到我们的馍是子类生成的。
+
+可能有人会说，我用简单工厂模式也行啊，但是如果10来个城市*5种风味/城市，那么岂不是简单工厂里面需要50多个if，再说人家西安肉夹馍分店就不能有点自己的秘诀，当然由它自己定最好。
+
+好了，方法工厂模式介绍完毕。
+
+4、抽象工厂模式
+
+定义：提供一个接口，用于创建相关的或依赖对象的家族，而不需要明确指定具体类。
+
+这定义有点绕口，算了，还是拿例子来说。继续卖肉夹馍，咱们生意这么好，难免有些分店开始动歪脑子，开始使用劣质肉等，砸我们的品牌。所以我们要拿钱在每个城市建立自己的原料场，保证高质量原料的供应。
+
+于是我们新建一个提供原料的接口：
+
+    package com.zhy.pattern.factory.b;
+     
+    /**
+     * 提供肉夹馍的原料
+     * @author zhy
+     *
+     */
+    public interface RouJiaMoYLFactroy
+    {
+    	/**
+    	 * 生产肉
+    	 * @return
+    	 */
+    	public Meat createMeat();
+    	
+    	/**
+    	 * 生产调料神马的
+    	 * @return
+    	 */
+    	public YuanLiao createYuanliao();
+    	
+    }
+
+
+    package com.zhy.pattern.factory.b;
+     
+    /**
+     * 根据西安当地特色，提供这两种材料
+     * @author zhy
+     *
+     */
+    public class XianRouJiaMoYLFactroy implements RouJiaMoYLFactroy
+    {
+     
+    	@Override
+    	public Meat createMeat()
+    	{
+    		return new FreshMest();
+    	}
+     
+    	@Override
+    	public YuanLiao createYuanliao()
+    	{
+    		return new XianTeSeYuanliao();
+    	}
+     
+    }
+
+
+有了原理工厂，那我们稍微修改下RouJiaMo的prepare方法：
+
+    package com.zhy.pattern.factory.b;
+     
+    public abstract class RouJiaMo
+    {
+    	public String name;
+     
+    	/**
+    	 * 准备工作
+    	 */
+    	public final void prepare(RouJiaMoYLFactroy ylFactroy)
+    	{
+    		Meat meat = ylFactroy.createMeat();
+    		YuanLiao yuanliao = ylFactroy.createYuanliao();
+    		System.out.println("使用官方的原料" + meat + " , " + yuanliao + "作为原材料制作肉夹馍 ");
+    	}
+     
+    	/**
+    	 * 使用你们的专用袋-包装
+    	 */
+    	public final void pack()
+    	{
+    		System.out.println("肉夹馍-专用袋-包装");
+    	}
+     
+    	/**
+    	 * 秘制设备-烘烤2分钟
+    	 */
+    	public final void fire()
+    	{
+    		System.out.println("肉夹馍-专用设备-烘烤");
+    	}
+    }
+
+
+    package com.zhy.pattern.factory.b;
+     
+    public abstract class RoujiaMoStore
+    {
+             private RouJiaMoYLFactroy ylFactroy;
+             public RoujiaMoStore() {
+                 ylFactroy = new XianRouJiaMoYLFactroy();
+             }
+
+             public RoujiaMoStore(RouJiaMoYLFactroy ylFactroy) {
+                 this.ylFactroy = ylFactroy;
+             }
+
+    	public abstract RouJiaMo createRouJiaMo(String type);
+     
+    	/**
+    	 * 根据传入类型卖不同的肉夹馍
+    	 * 
+    	 * @param type
+    	 * @return
+    	 */
+    	public RouJiaMo sellRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = createRouJiaMo(type);
+    		rouJiaMo.prepare(ylFactroy);
+    		rouJiaMo.fire();
+    		rouJiaMo.pack();
+    		return rouJiaMo;
+    	}
+     
+    }
+
+    package com.zhy.pattern.factory.b;
+     
+     
+     
+    /**
+     * 西安肉夹馍店
+     * 
+     * @author zhy
+     * 
+     */
+    public class XianRouJiaMoStore extends RoujiaMoStore
+    {
+     
+    	@Override
+    	public RouJiaMo createRouJiaMo(String type)
+    	{
+    		RouJiaMo rouJiaMo = null;
+    		if (type.equals("Suan"))
+    		{
+    			rouJiaMo = new XianSuanRouJiaMo();
+     
+    		} else if (type.equals("Tian"))
+    		{
+    			rouJiaMo = new XianTianRouJiaMo();
+    		} else if (type.equals("La"))
+    		{
+    			rouJiaMo = new XianLaRouJiaMo();
+    		}
+    		return rouJiaMo;
+     
+    	}
+     
+    }
+
+好了，现在必须用我们官方原料做为原材料了。
+
+现在对比定义：
+
+1、提供一个接口：public interface RouJiaMoYLFactroy
+
+2、用于创建相关的或依赖对象的家族 public Meat createMeat();public YuanLiao createYuanliao();我们接口用于创建一系列的原材料。
+
+好了，最后测试下，我要在西安馍店，买个酸味的尝尝：
+
+    package com.zhy.pattern.factory.b;
+     
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		
+    		RoujiaMoStore roujiaMoStore = new XianRouJiaMoStore();
+    		RouJiaMo suanRoujiaMo = roujiaMoStore.sellRouJiaMo("Suan");
+    		System.out.println(suanRoujiaMo.name);
+    	}
+    }
+
+
+    使用官方的原料com.zhy.pattern.factory.b.FreshMest@e53108 , com.zhy.pattern.factory.b.XianTeSeYuanliao@f62373作为原材料制作肉夹馍 
+    肉夹馍-专用设备-烘烤
+    肉夹馍-专用袋-包装
+    酸味肉夹馍
+
+设计模式 单例模式
+
+1、什么是设计模式？
+
+    首先我们来看第一个问题什么是设计模式？在百度百科中它的定义是这样的：  设计模式（Design pattern）是一套被反复使用、多数人知晓的、经过分类编目的、代码设计经验的总结。(百度百科)
+    其实设计模式是人们实践的产物，在初期的开发过程中好多人发现再进行重复的代码书写，那些开发大牛们就不断总结、抽取最终得到了大家的认可于是就产生了设计模式，其实设计模式的种类可以分为23种左右，今天主要和大家一起学习一下单例设计模式，因为这种设计模式是使用的最多的设计模式。在以后的文章中会给大家带来其他模式的讨论。
+
+2、为什么会有单例设计模式？
+
+  我们都知道单例模式是在开发中用的最多的一种设计模式，那么究竟为什么会有单例设计模式呢？对于这个问题相信有很多会写单例的人都会有个这个疑问。在这里先说一下单例的用途，然后举一个例子大家就会明白为什么会有单例了。单例模式主要是为了避免因为创建了多个实例造成资源的浪费，且多个实例由于多次调用容易导致结果出现错误，而使用单例模式能够保证整个应用中有且只有一个实例。从其名字中我们就可以看出所谓单例，就是单个实例也就是说它可以解决的问题是：可以保证一个类在内存中的对象的唯一性，在一些常用的工具类、线程池、缓存，数据库，账户登录系统、配置文件等程序中可能只允许我们创建一个对象，一方面如果创建多个对象可能引起程序的错误，另一方面创建多个对象也造成资源的浪费。在这种基础之上单例设计模式就产生了因为使用单例能够保证整个应用中有且只有一个实例，看到这大家可能有些疑惑，没关系，我们来举一个例子，相信看完后你就会非常明白，为什么会有单例。
+
+假如有一个有这么一个需求，有一个类A和一个类B它们共享配置文件的信息，在这个配置文件中有很多数据如下图所示
+
+
+如上图所示现在类ConfigFile中存在共享的数据Num1，Num2，Num3等。假如在类A中修改ConfigFile中数据，在类A中应该有如下代码
+
+    ConfigFile configFile=new ConfigFile();
+    configFile.Num1=2;
+
+这个时候configFile中的Num1=2，但是请注意这里是new ConfigFile是一个对象，想象一下在进行了上述操作后类B中进行如下操作
+
+    ConfigFile configFile=new ConfigFile();
+    System. out.println("configFile.Num1=" +configFile.Num1);
+
+即直接new ConfigFile();然后打印Num1,大家思考一下这时候打印出的数据为几？我想你应该知道它打印的结果是这样的：configFile.Num1=1;也就是说因为每次调用都创建了一个ConfigFile对象，所以导致了在类A中的修改并不会真正改变ConfigFile中的值，它所更改的只是在类A中说创建的那个对象的值。
+假如现在要求在类A中修改数据后，要通知类B，即在类A和类B中操作的数据是同一个数据，类A改变一个数据，类B也会得到这个数据，并在类A修改后的基础上进行操作，那么我们应该怎么做呢?看到这大家可能会说so easy,把ConfigFile中的数据设置为静态不就Ok了吗？对，有这种想法很好，这样做也没有错。
+但是我们都知道静态数据的生命周期是很长的，假如ConfigFile中有很多数据时，如果将其全部设成静态的，那将是对内存的极大损耗。所以全部设置成静态虽然可行但并不是一个很好的解决方法。那么我们应该怎么做呢？要想解决上面的问题，其实不难，只要能保证对象是唯一的就可以解决上面的问题，那么问题来了如何保证对象的唯一性呢？这样就需要用单例设计模式了。
+
+3、单例模式的设计思想
+在上面我们说到现在解决问题的关键就是保证在应用中只有一个对象就行了，那么怎么保证只有一个对象呢？
+
+其实只需要三步就可以保证对象的唯一性
+
+(1)不允许其他程序用new对象。
+
+    因为new就是开辟新的空间，在这里更改数据只是更改的所创建的对象的数据，如果可以new的话，每一次new都产生一个对象，这样肯定保证不了对象的唯一性。
+
+(2)在该类中创建对象
+   因为不允许其他程序new对象，所以这里的对象需要在本类中new出来
+
+(3)对外提供一个可以让其他程序获取该对象的方法
+
+   因为对象是在本类中创建的，所以需要提供一个方法让其它的类获取这个对象。
+
+那么这三步怎么用代码实现呢？将上述三步转换成代码描述是这样的
+
+(1)私有化该类的构造函数
+(2)通过new在本类中创建一个本类对象
+(3)定义一个公有的方法，将在该类中所创建的对象返回
+
+
+4、单例模式的写法
+
+   经过3中的分析我们理解了单例所解决的问题以及它的实现思想，接着来看看它的实现代码，单例模式的写法大的方面可以分为5种五种①懒汉式②饿汉式③双重校验锁④静态内部类⑤枚举。接下来我们就一起来看看这几种单例设计模式的代码实现，以及它们的优缺点
+4.1单例模式的饿汉式[可用]
+
+    public class Singleton {
+     
+    	private static Singleton instance=new Singleton();
+    	private Singleton(){};
+    	public static Singleton getInstance(){
+    		return instance;
+    	}
+    }
+
+访问方式
+
+Singleton instance = Singleton.getInstance();
+
+得到这个实例后就可以访问这个类中的方法了。
+
+优点：从它的实现中我们可以看到，这种方式的实现比较简单，在类加载的时候就完成了实例化，避免了线程的同步问题。
+
+缺点：由于在类加载的时候就实例化了，所以没有达到Lazy Loading(懒加载)的效果，也就是说可能我没有用到这个实例，但是它
+
+也会加载，会造成内存的浪费(但是这个浪费可以忽略，所以这种方式也是推荐使用的)。
+  4.2单例模式的饿汉式变换写法[可用]
+
+    public class Singleton{
+     
+    	private static Singleton instance = null;
+    	
+    	static {
+    		instance = new Singleton();
+    	}
+     
+    	private Singleton() {};
+     
+    	public static Singleton getInstance() {
+    		return instance;
+    	}
+    }
+
+访问方式：
+
+Singleton instance = Singleton.getInstance();
+
+得到这个实例后就可以访问这个类中的方法了。
+
+可以看到上面的代码是按照在2中分析的那三步来实现的，这中写法被称为饿汉式，因为它在类创建的时候就已经实例化了对象。其实4.2和4.1只是写法有点不同，都是在类初始化时创建对象的，它的优缺点和4.1一样，可以归为一种写法。
+
+4.3单例模式的懒汉式[线程不安全，不可用]
+
+    public class Singleton {
+     
+    	private static Singleton instance=null;
+    	
+    	private Singleton() {};
+    	
+    	public static Singleton getInstance(){
+    		
+    		if(instance==null){
+    			instance=new Singleton();
+    		}
+    		return instance;
+    	}
+    }
+
+这种方式是在调用getInstance方法的时候才创建对象的，所以它比较懒因此被称为懒汉式。
+在上述两种写法中懒汉式其实是存在线程安全问题的，喜欢刨根问题的同学可能会问，存在怎样的线程安全问题？怎样导致这种问题的？好，我们来说一下什么情况下这种写法会有问题。
+在运行过程中可能存在这么一种情况：有多个线程去调用getInstance方法来获取Singleton的实例，那么就有可能发生这样一种情况当第一个线程在执行if(instance==null)这个语句时，此时instance是为null的进入语句。
+在还没有执行instance=new Singleton()时(此时instance是为null的)第二个线程也进入if(instance==null)这个语句，因为之前进入这个语句的线程中还没有执行instance=new Singleton()，所以它会执行instance=new Singleton()来实例化Singleton对象，
+因为第二个线程也进入了if语句所以它也会实例化Singleton对象。这样就导致了实例化了两个Singleton对象。所以单例模式的懒汉式是存在线程安全问题的，既然它存在问题，那么可能有解决这个问题的方法，那么究竟怎么解决呢？对这种问题可能很多人会想到加锁于是出现了下面这种写法。
+
+4.4懒汉式线程安全的[线程安全，效率低不推荐使用]
+
+    public class Singleton {
+     
+    	private static Singleton instance=null;
+    	
+    	private Singleton() {};
+    	
+    	public static synchronized Singleton getInstance(){
+    		
+    		if(instance==null){
+    			instance=new Singleton();
+    		}
+    		return instance;
+    	}
+    }
+
+缺点：效率太低了，每个线程在想获得类的实例时候，执行getInstance()方法都要进行同步。而其实这个方法只执行一次实例化代码就够了，后面的想获得该类实例，直接return就行了。方法进行同步效率太低要改进。
+4.5单例模式懒汉式[线程不安全，不可用]
+对于上述缺陷的改进可能有的人会想到如下的代码
+
+    public class Singleton7 {
+     
+    	private static Singleton instance=null;
+    	
+    	public static Singleton getInstance() {
+    		if (instance == null) {
+    			synchronized (Singleton.class) {
+    				instance = new Singleton();
+    			}
+    		}
+    		return instance;
+    	}
+    }
+
+其实这种写法跟4.3一样是线程不安全的，当一个线程还没有实例化Singleton时另一个线程执行到if(instance==null)这个判断语句时就会进入if语句，虽然加了锁，但是等到第一个线程执行完instance=new Singleton()跳出这个锁时，另一个进入if语句的线程同样会实例化另外一个Singleton对象，线程不安全的原理跟4.3类似。因此这种改进方式并不可行，经过大神们一步一步的探索，写出了懒汉式的双重校验锁。
+
+4.6单例模式懒汉式双重校验锁[推荐用]
+
+    public class Singleton {
+    	/**
+    	 * 懒汉式变种，属于懒汉式中最好的写法，保证了：延迟加载和线程安全
+    	 */
+    	private static Singleton instance=null;
+    	
+    	private Singleton() {};
+    	
+    	public static Singleton getInstance(){
+    		 if (instance == null) {  
+    	          synchronized (Singleton.class) {  
+    	              if (instance == null) {  
+    	            	  instance = new Singleton();  
+    	              }  
+    	          }  
+    	      }  
+    	      return instance;  
+    	}
+    }
+
+访问方式
+
+Singleton instance = Singleton.getInstance();
+
+得到这个实例后就可以访问这个类中的方法了。
+
+Double-Check概念对于多线程开发者来说不会陌生，如代码中所示，我们进行了两次if (instance== null)检查，这样就可以保    证线程安全了。这样，实例化代码只用执行一次，后面再次访问时，判断if (instance== null)，直接return实例化对象。
+
+优点：线程安全；延迟加载；效率较高。
+
+4.7内部类[推荐用]
+
+    public class Singleton{
+     
+    	
+    	private Singleton() {};
+    	
+    	private static class SingletonHolder{
+    		private static Singleton instance=new Singleton();
+    	} 
+    	
+    	public static Singleton getInstance(){
+    		return SingletonHolder.instance;
+    	}
+    }
+
+访问方式
+
+Singleton instance = Singleton.getInstance();
+
+得到这个实例后就可以访问这个类中的方法了。
+
+    这种方式跟饿汉式方式采用的机制类似，但又有不同。两者都是采用了类装载的机制来保证初始化实例时只有一个线程。
+    不同的地方在饿汉式方式是只要Singleton类被装载就会实例化，没有Lazy-Loading的作用，而静态内部类方式在Singleton类被装载时并不会立即实例化，
+    而是在需要实例化时，调用getInstance方法，才会装载SingletonHolder类，从而完成Singleton的实例化。
+
+类的静态属性只会在第一次加载类的时候初始化，所以在这里，JVM帮助我们保证了线程的安全性，在类进行初始化时，别的线程是无法进入的。
+
+优点：避免了线程不安全，延迟加载，效率高。
+4.8枚举[极推荐使用]
+
+    public enum SingletonEnum {
+    	
+    	 instance; 
+    	 
+    	 private SingletonEnum() {}
+    	 
+    	 public void method(){
+    	 }
+    }
+
+访问方式
+
+SingletonEnum.instance.method();
+
+可以看到枚举的书写非常简单，访问也很简单SingletonEnum.instance中的instance即为SingletonEnum类型的引用，所以得到它就可以调用枚举中的方法了。
+
+借助JDK1.5中添加的枚举来实现单例模式。不仅能避免多线程同步问题，而且还能防止反序列化重新创建新的对象。可能是因为枚举在JDK1.5中才添加，所以在实际项目开发中，很少见人这么写过，这种方式也是最好的一种方式，如果在开发中JDK满足要求的情况下建议使用这种方式。
+
+5、总结
+
+     在真正的项目开发中一般采用4.1、4.6、4.7、4.8看你最喜欢哪种写法了，一般情况下这几种模式是没有问题的，为了装逼我一般采用4.6这种写法，我们经常用的Android-Universal-Image-Loader这个开源项目也是采用的4.6这种写法，
+    其实最安全的写法是4.8即枚举，它的实现非常简单而且最安全可谓很完美，但是可能是因为只支持JDK1.5吧又或者是因为枚举大家不熟悉所以目前使用的人并不多，但是大家可以尝试下。另外当我们使用反射机制时可能不能保证实例的唯一性，但是枚举始终可以保证唯一性，具体请参考次博客：http://blog.csdn.net/java2000_net/article/details/3983958但是一般情况下很少遇到这种情况。
+6、单例模式的在面试中的问题
+
+     单例模式在面试中会常常的被遇到，因为它是考擦一个程序员的基础的扎实程度的，如果说你跟面试官说你做过项目，面试官让你写几个单例设计模式，你写不出来，你觉着面试官会相信吗？在面试时一定要认真准备每一次面试，靠忽悠即使你被录取了，你也很有可能会对这个公司不满意，好了我们言归正传，其实单例设计模式在面试中很少有人会问饿汉式写法，一般都会问单例设计模式的懒汉式的线程安全问题，所以大家一定要充分理解单例模式的线程安全的问题，就这几种模式花点时间，认真学透，面试中遇到任何关于单例模式的问题你都不会害怕是吧。
+
+设计模式 策略模式
+
+先来看看策略模式的定义：
+
+策略模式（Strategy Pattern）：定义了算法族，分别封装起来，让它们之间可相互替换，此模式让算法的变化独立于使用算法的客户。
+
+好了，对于定义，肯定不是一眼就能看明白的，不然这篇文章就收尾了，对于定于大家简单扫一眼，知道个大概，然后继续读下面的文章，读完以后再来回味，效果嘎嘣脆。大家应该都玩过武侠角色游戏，下面我就以角色游戏为背景，为大家介绍：假设公司需要做一款武侠游戏，我们就是负责游戏的角色模块，需求是这样的：每个角色对应一个名字，每类角色对应一种样子，每个角色拥有一个逃跑、攻击、防御的技能。
+
+初步的代码：
+
+    package com.zhy.bean;
+     
+    /**
+     * 游戏的角色超类
+     * 
+     * @author zhy
+     * 
+     */
+    public abstract class Role
+    {
+    	protected String name;
+     
+    	protected abstract void display();
+     
+    	protected abstract void run();
+     
+    	protected abstract void attack();
+     
+    	protected abstract void defend();
+     
+    }
+
+    package com.zhy.bean;
+     
+    public class RoleA extends Role
+    {
+    	public RoleA(String name)
+    	{
+    		this.name = name;
+    	}
+     
+    	@Override
+    	protected void display()
+    	{
+    		System.out.println("样子1");
+    	}
+     
+    	@Override
+    	protected void run()
+    	{
+    		System.out.println("金蝉脱壳");
+    	}
+     
+    	@Override
+    	protected void attack()
+    	{
+    		System.out.println("降龙十八掌");
+    	}
+     
+    	@Override
+    	protected void defend()
+    	{
+    		System.out.println("铁头功");
+    	}
+     
+    }
+
+
+没几分钟，你写好了上面的代码，觉得已经充分发挥了OO的思想，正在窃喜，这时候项目经理说，再添加两个角色
+
+RoleB(样子2 ，降龙十八掌，铁布衫，金蝉脱壳)。
+
+RoleC(样子1，拥有九阳神功，铁布衫，烟雾弹)。
+
+于是你觉得没问题，开始写代码，继续集成Role，写成下面的代码：
+
+    package com.zhy.bean;
+     
+    public class RoleB extends Role
+    {
+    	public RoleB(String name)
+    	{
+    		this.name = name;
+    	}
+     
+    	@Override
+    	protected void display()
+    	{
+    		System.out.println("样子2");
+    	}
+     
+    	@Override
+    	protected void run()
+    	{
+    		System.out.println("金蝉脱壳");//从RoleA中拷贝
+    	}
+     
+    	@Override
+    	protected void attack()
+    	{
+    		System.out.println("降龙十八掌");//从RoleA中拷贝
+    	}
+     
+    	@Override
+    	protected void defend()
+    	{
+    		System.out.println("铁布衫");
+    	}
+     
+    }
+
+
+    package com.zhy.bean;
+     
+    public class RoleC extends Role
+    {
+    	public RoleC(String name)
+    	{
+    		this.name = name;
+    	}
+     
+    	@Override
+    	protected void display()
+    	{
+    		System.out.println("样子1");//从RoleA中拷贝
+    	}
+     
+    	@Override
+    	protected void run()
+    	{
+    		System.out.println("烟雾弹");
+    	}
+     
+    	@Override
+    	protected void attack()
+    	{
+    		System.out.println("九阳神功");
+    	}
+     
+    	@Override
+    	protected void defend()
+    	{
+    		System.out.println("铁布衫");//从B中拷贝
+    	}
+     
+    }
+
+
+写完之后，你自己似乎没有当初那么自信了，你发现代码中已经存在相当多重复的代码，需要考虑重新设计架构了。于是你想，要不把每个技能都写成接口，有什么技能的角色实现什么接口，简单一想，觉得这想法高大尚啊，但是实现起来会发现，接口并不能实现代码的复用，每个实现接口的类，还是必须写自己写实现。
+于是，we need change ! 遵循设计的原则，找出应用中可能需要变化的部分，把它们独立出来，不要和那些不需要变化的代码混在一起。我们发现，对于每个角色的display，attack，defend，run都是有可能变化的，于是我们必须把这写独立出来。再根据另一个设计原则：针对接口（超类型）编程，而不是针对实现编程，于是我们把代码改造成这样：
+
+    package com.zhy.bean;
+     
+    public interface IRunBehavior
+    {
+    	void run();
+    }
+
+
+    package com.zhy.bean;
+     
+    public interface IAttackBehavior
+    {
+    	void attack();
+    }
+
+
+    package com.zhy.bean;
+     
+    public interface IDefendBehavior
+    {
+    	void defend();
+    }
+
+
+    package com.zhy.bean;
+     
+    public interface IDisplayBehavior
+    {
+    	void display();
+    }
+
+
+    package com.zhy.bean;
+     
+    public class AttackJY implements IAttackBehavior
+    {
+     
+    	@Override
+    	public void attack()
+    	{
+    		System.out.println("九阳神功！");
+    	}
+     
+    }
+
+    package com.zhy.bean;
+     
+    public class DefendTBS implements IDefendBehavior
+    {
+     
+    	@Override
+    	public void defend()
+    	{
+    		System.out.println("铁布衫");
+    	}
+     
+    }
+
+
+    package com.zhy.bean;
+     
+    public class RunJCTQ implements IRunBehavior
+    {
+     
+    	@Override
+    	public void run()
+    	{
+    		System.out.println("金蝉脱壳");
+    	}
+     
+    }
+
+
+这时候需要对Role的代码做出改变：
+
+    package com.zhy.bean;
+     
+    /**
+     * 游戏的角色超类
+     * 
+     * @author zhy
+     * 
+     */
+    public abstract class Role
+    {
+    	protected String name;
+     
+    	protected IDefendBehavior defendBehavior;
+    	protected IDisplayBehavior displayBehavior;
+    	protected IRunBehavior runBehavior;
+    	protected IAttackBehavior attackBehavior;
+     
+    	public Role setDefendBehavior(IDefendBehavior defendBehavior)
+    	{
+    		this.defendBehavior = defendBehavior;
+    		return this;
+    	}
+     
+    	public Role setDisplayBehavior(IDisplayBehavior displayBehavior)
+    	{
+    		this.displayBehavior = displayBehavior;
+    		return this;
+    	}
+     
+    	public Role setRunBehavior(IRunBehavior runBehavior)
+    	{
+    		this.runBehavior = runBehavior;
+    		return this;
+    	}
+     
+    	public Role setAttackBehavior(IAttackBehavior attackBehavior)
+    	{
+    		this.attackBehavior = attackBehavior;
+    		return this;
+    	}
+     
+    	protected void display()
+    	{
+    		displayBehavior.display();
+    	}
+     
+    	protected void run()
+    	{
+    		runBehavior.run();
+    	}
+     
+    	protected void attack()
+    	{
+    		attackBehavior.attack();
+    	}
+     
+    	protected void defend()
+    	{
+    		defendBehavior.defend();
+    	}
+     
+    }
+
+
+每个角色现在只需要一个name了：
+
+    package com.zhy.bean;
+     
+    public class RoleA extends Role
+    {
+    	public RoleA(String name)
+    	{
+    		this.name = name;
+    	}
+     
+    }
+
+
+现在我们需要一个金蝉脱壳，降龙十八掌！，铁布衫，样子1的角色A只需要这样：
+
+    package com.zhy.bean;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+     
+    		Role roleA = new RoleA("A");
+     
+    		roleA.setAttackBehavior(new AttackXL())//
+    				.setDefendBehavior(new DefendTBS())//
+    				.setDisplayBehavior(new DisplayA())//
+    				.setRunBehavior(new RunJCTQ());
+    		System.out.println(roleA.name + ":");
+    		roleA.run();
+    		roleA.attack();
+    		roleA.defend();
+    		roleA.display();
+    	}
+    }
+
+
+经过我们的修改，现在所有的技能的实现做到了100%的复用，并且随便项目经理需要什么样的角色，对于我们来说只需要动态设置一下技能和展示方式，是不是很完美。
+恭喜你，现在你已经学会了策略模式，现在我们回到定义，定义上的算法族：其实就是上述例子的技能；定义上的客户：其实就是RoleA，RoleB...；我们已经定义了一个算法族（各种技能），且根据需求可以进行相互替换，算法（各种技能）的实现独立于客户（角色）。现在是不是很好理解策略模式的定义了。
+
+设计模式 适配器模式
+
+定义：将一个类的接口转换成客户期望的另一个接口，适配器让原本接口不兼容的类可以相互合作。这个定义还好，说适配器的功能就是把一个接口转成另一个接口。
+
+发现两张图片可以很好的解释适配器模式：
+
+
+
+这两张图很好的说明了适配器的作用哈，话说我当年买了个欧版的HTC G17 ，还配了个插头转化器，这个插头转化器就是起得适配器的作用。下来来点代码解释哈，如题目，手机充电器一般都是5V左右吧，咱天朝的家用交流电压220V，所以手机充电需要一个适配器（降压器），有什么物理名词使用错误的，见谅。
+
+首先一部手机：Mobile.java
+
+    package com.zhy.pattern.adapter;
+     
+    public class Mobile
+    {
+    	/**
+    	 * 充电
+    	 * @param power 
+    	 */
+    	public void inputPower(V5Power power)
+    	{
+    		int provideV5Power = power.provideV5Power();
+    		System.out.println("手机（客户端）：我需要5V电压充电，现在是-->" + provideV5Power + "V");
+    	}
+    }
+
+
+可以看出，手机依赖一个提供5V电压的接口：
+
+    package com.zhy.pattern.adapter;
+    /**
+     * 提供5V电压的一个接口
+     * @author zhy
+     *
+     */
+    public interface V5Power
+    {
+    	public int provideV5Power();
+    }
+
+
+然后我们拥有的是220V家用交流电：
+
+    package com.zhy.pattern.adapter;
+     
+    /**
+     * 家用220V交流电
+     * @author zhy
+     *
+     */
+    public class V220Power
+    {
+    	/**
+    	 * 提供220V电压
+    	 * @return
+    	 */
+    	public int provideV220Power()
+    	{
+    		System.out.println("我提供220V交流电压。");
+    		return 220 ; 
+    	}
+    }
+
+
+下面我们需要一个适配器，完成220V转5V的作用：
+
+    package com.zhy.pattern.adapter;
+     
+    /**
+     * 适配器，把220V电压变成5V
+     * @author zhy
+     *
+     */
+    public class V5PowerAdapter implements V5Power
+    {
+    	/**
+    	 * 组合的方式
+    	 */
+    	private V220Power v220Power ;
+    	
+    	public V5PowerAdapter(V220Power v220Power)
+    	{
+    		this.v220Power = v220Power ;
+    	}
+     
+    	@Override
+    	public int provideV5Power()
+    	{
+    		int power = v220Power.provideV220Power() ;
+    		//power经过各种操作-->5 
+    		System.out.println("适配器：我悄悄的适配了电压。");
+    		return 5 ; 
+    	} 
+    	
+    }
+
+
+最后测试，我们给手机冲个电：
+
+    package com.zhy.pattern.adapter;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		Mobile mobile = new Mobile();
+    		V5Power v5Power = new V5PowerAdapter(new V220Power()) ; 
+    		mobile.inputPower(v5Power);
+    	}
+    }
+
+
+输出：
+
+    现有类：我提供220V交流电压。
+    适配器：我悄悄的适配了电压。
+    手机（客户端）：我需要5V电压充电，现在是-->5V
+
+
+可以看出，我们使用一个适配器完成了把220V转化了5V然后提供给手机使用，且我们使用了组合（OO设计原则），原有的手机，以及200V电压类都不需要变化，且手机（客户端）和220V（被适配者）完全解耦。
+
+设计模式 命令模式
+
+定义：将“请求”封装成对象，以便使用不同的请求、队列或者日志来参数化其他对象。命令模式也支持可撤销的操作。
+
+这尼玛定义，看得人蛋疼，看不明白要淡定，我稍微简化一下：将请求封装成对象，将动作请求者和动作执行者解耦。好了，直接用例子来说明。
+
+需求：最近智能家电很火热啊，未来尼玛估计冰箱都会用支付宝自动买东西了，，，，假设现在有电视、电脑、电灯等家电，现在需要你做个遥控器控制所有家电的开关，要求做到每个按钮对应的功能供用户个性化，对于新买入家电要有非常强的扩展性。
+
+这个需求一看，尼玛要是没有什么个性化、扩展性还好说啊，直接针对每个遥控器的按钮onClick，然后在里面把代码写死就搞定了，但是个性化怎么整，还要有扩展性。。。
+
+好了，下面命令模式出场，命令模式的核心就是把命令封装成类，对于命令执行者不需要知道现在执行的具体是什么命令。
+
+1、首先看下我们拥有的家电的API：
+
+    package com.zhy.pattern.command;
+    /**
+     * 门
+     * @author zhy
+     *
+     */
+    public class Door
+    {
+    	public void open()
+    	{
+    		System.out.println("打开门");
+    	}
+     
+    	public void close()
+    	{
+    		System.out.println("关闭门");
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 电灯
+     * @author zhy
+     *
+     */
+    public class Light
+    {
+    	public void on()
+    	{
+    		System.out.println("打开电灯");
+    	}
+     
+    	public void off()
+    	{
+    		System.out.println("关闭电灯");
+    	}
+    }
+
+
+    package com.zhy.pattern.command;
+    /**
+     * 电脑
+     * @author zhy
+     *
+     */
+    public class Computer
+    {
+    	public void on()
+    	{
+    		System.out.println("打开电脑");
+    	}
+    	
+    	public void off()
+    	{
+    		System.out.println("关闭电脑");
+    	}
+    }
+
+
+看来我们有电灯、电脑、和门，并且开关的接口的设计好了。接下来看如何把命令封装成类：
+
+    package com.zhy.pattern.command;
+     
+    public interface Command
+    {
+    	public void execute();
+    }
+
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 关闭电灯的命令
+     * @author zhy
+     *
+     */
+    public class LightOffCommond implements Command
+    {
+    	private Light light ; 
+    	
+    	public LightOffCommond(Light light)
+    	{
+    		this.light = light;
+    	}
+     
+    	@Override
+    	public void execute()
+    	{
+    		light.off();
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 打开电灯的命令
+     * @author zhy
+     *
+     */
+    public class LightOnCommond implements Command
+    {
+    	private Light light ; 
+    	
+    	public LightOnCommond(Light light)
+    	{
+    		this.light = light;
+    	}
+     
+    	@Override
+    	public void execute()
+    	{
+    		light.on();
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 开电脑的命令
+     * @author zhy
+     *
+     */
+    public class ComputerOnCommond implements Command
+    {
+    	private Computer computer ; 
+    	
+    	public ComputerOnCommond( Computer computer)
+    	{
+    		this.computer = computer;
+    	}
+     
+    	@Override
+    	public void execute()
+    	{
+    		computer.on();
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 关电脑的命令
+     * @author zhy
+     *
+     */
+    public class ComputerOffCommond implements Command
+    {
+    	private Computer computer ; 
+    	
+    	public ComputerOffCommond( Computer computer)
+    	{
+    		this.computer = computer;
+    	}
+     
+    	@Override
+    	public void execute()
+    	{
+    		computer.off();
+    	}
+    	
+    	
+     
+    }
+
+
+好了，不贴那么多了，既然有很多命令，按照设计原则，我们肯定有个超类型的Command，然后各个子类，看我们把每个命令（请求）都封装成类了。接下来看我们的遥控器。
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 控制器面板，一共有9个按钮
+     * 
+     * @author zhy
+     * 
+     */
+    public class ControlPanel
+    {
+    	private static final int CONTROL_SIZE = 9;
+    	private Command[] commands;
+     
+    	public ControlPanel()
+    	{
+    		commands = new Command[CONTROL_SIZE];
+    		/**
+    		 * 初始化所有按钮指向空对象
+    		 */
+    		for (int i = 0; i < CONTROL_SIZE; i++)
+    		{
+    			commands[i] = new NoCommand();
+    		}
+    	}
+     
+    	/**
+    	 * 设置每个按钮对应的命令
+    	 * @param index
+    	 * @param command
+    	 */
+    	public void setCommand(int index, Command command)
+    	{
+    		commands[index] = command;
+    	}
+     
+    	/**
+    	 * 模拟点击按钮
+    	 * @param index
+    	 */
+    	public void keyPressed(int index)
+    	{
+    		commands[index].execute();
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * @author zhy
+     *
+     */
+    public class NoCommand implements Command
+    {
+    	@Override
+    	public void execute()
+    	{
+     
+    	}
+     
+    }
+
+
+注意看到我们的遥控器有9个按钮，提供了设置每个按钮的功能和点击的方法，还有注意到我们使用了一个NoCommand对象，叫做空对象，这个对象的好处就是，我们不用执行前都判断个if(!=null)，并且提供了一致的操作。
+
+最后测试一下代码：
+
+    package com.zhy.pattern.command;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		/**
+    		 * 三个家电
+    		 */
+    		Light light = new Light();
+    		Door door = new Door();
+    		Computer computer = new Computer();
+    		/**
+    		 * 一个控制器，假设是我们的app主界面
+    		 */
+    		ControlPanel controlPanel = new ControlPanel();
+    		// 为每个按钮设置功能
+    		controlPanel.setCommand(0, new LightOnCommond(light));
+    		controlPanel.setCommand(1, new LightOffCommond(light));
+    		controlPanel.setCommand(2, new ComputerOnCommond(computer));
+    		controlPanel.setCommand(3, new ComputerOffCommond(computer));
+    		controlPanel.setCommand(4, new DoorOnCommond(door));
+    		controlPanel.setCommand(5, new DoorOffCommond(door));
+     
+    		// 模拟点击
+    		controlPanel.keyPressed(0);
+    		controlPanel.keyPressed(2);
+    		controlPanel.keyPressed(3);
+    		controlPanel.keyPressed(4);
+    		controlPanel.keyPressed(5);
+    		controlPanel.keyPressed(8);// 这个没有指定，但是不会出任何问题，我们的NoCommand的功劳
+     
+    		
+     
+    	}
+    }
+
+输出结果：
+
+
+可以看到任意按钮可以随意配置任何命令，再也不需要尼玛的变一下需求改代码了，随便用户怎么个性化了。其实想白了，这里的设置我们还可以配置到一个配置文件中，完全的解耦有木有。
+
+
+好了，用户对于这个按钮可能还不是太满意，用户希望夜深人静的时候，能够提供个按钮直接关门、关灯、开电脑，，，，大家懂的，，，我们稍微修改下代码，满足他
+
+定义一个命令，用户干一些列的事，可配置，且与原来的命令保持接口一致：
+
+    package com.zhy.pattern.command;
+     
+    /**
+     * 定义一个命令，可以干一系列的事情
+     * 
+     * @author zhy
+     * 
+     */
+    public class QuickCommand implements Command
+    {
+    	private Command[] commands;
+     
+    	public QuickCommand(Command[] commands)
+    	{
+    		this.commands = commands;
+    	}
+     
+    	@Override
+    	public void execute()
+    	{
+    		for (int i = 0; i < commands.length; i++)
+    		{
+    			commands[i].execute();
+    		}
+    	}
+     
+    }
+
+
+好了，已经满足屌丝的需求了。我们测试看看。
+
+    // 定义一键搞定模式
+    		QuickCommand quickCommand = new QuickCommand(new Command[] { new DoorOffCommond(door),
+    				new LightOffCommond(light), new ComputerOnCommond(computer) });
+    		System.out.println("****点击一键搞定按钮****");
+    		controlPanel.setCommand(8, quickCommand);
+    		controlPanel.keyPressed(8);
+
+
+
+是不是很完美。
+
+
+最后，继续来谈谈命令模式，命令模式就是把命令封装成对象，然后将动作请求者与动作执行者完全解耦，上例中遥控器的按钮和电器一毛钱关系都没吧。
+
+还记得定义中提到了队列，命令模式如何用于队列呢，比如饭店有很多个点菜的地方，有一个做菜的地方，把点菜看作命令，做菜看作命令执行者，不断有人点菜就相当于把菜加入队列，对于做菜的只管从队列里面取，取一个做一个。
+
+定义中还提到了日志，日志一般用于记录用户行为，或者在异常时恢复时用的，比如每个命令现在包含两个方法，一个执行execute，一个undo（上例中为了方便大家理解，没有写undo），我们可以把用户所有命令调用保存到日志中，比如用户操作不当了，电器异常了，只需要把日志中所有的命令拿出来执行一遍undo就完全恢复了，是吧，就是这么个意思。
+
+设计模式 装饰者模式
+
+装饰者模式：若要扩展功能，装饰者提供了比集成更有弹性的替代方案，动态地将责任附加到对象上。
+
+先简单描述下装饰者模式发挥作用的地方，当我们设计好了一个类，我们需要给这个类添加一些辅助的功能，并且不希望改变这个类的代码，这时候就是装饰者模式大展雄威的时候了。这里还体现了一个原则：类应该对扩展开放，对修改关闭。
+
+下面进入正题，今天在那看电影，忽然想起年轻时在游戏场上的血雨腥风啊，哈哈，下面以游戏为背景介绍装饰者模式。玩过游戏的兄弟应该都知道，游戏里面每个角色有武器、鞋子、护腕、戒指、还有各种红宝石、蓝宝石、黄宝石等等。
+
+下面需求开始：设计游戏的装备系统，基本要求，要可以计算出每种装备在镶嵌了各种宝石后的攻击力和描述：
+
+具体需求：
+
+1、武器（攻击力20） 、戒指（攻击力5）、护腕（攻击力5）、鞋子（攻击力5）
+
+2、蓝宝石（攻击力5/颗）、黄宝石（攻击力10/颗）、红宝石（攻击力15/颗）
+
+3、每个装备可以随意镶嵌3颗
+
+
+好了，需求介绍完毕，当然了，不要吐槽我的设计，尼玛鞋子哪来的攻击力，关键时刻也是可以砸人的嘛。下面开始初步的设想，出于多年面向对象的经验，我们可能会这么设计：
+
+如果你这么设计了，我靠，就这么点需求你写了几百个类，随便添加两个宝石，哈哈，指数增长听过么，准备加班吧。
+
+可能你还会这么设计：写一个超类，然后里面各种set宝石，然后在计算攻击力的地方，使劲的If有哪几种宝石，恭喜你，代码量不是很大，但是随便添加个武器，你得又多写多少个IF呢。
+
+上面叙述了一些可能性的设计，都不是很好，下面看看如何将装饰者模式融入：
+
+首先是装备的超类
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 装备的接口
+     * 
+     * @author zhy
+     * 
+     */
+    public interface IEquip
+    {
+     
+    	/**
+    	 * 计算攻击力
+    	 * 
+    	 * @return
+    	 */
+    	public int caculateAttack();
+     
+    	/**
+    	 * 装备的描述
+    	 * 
+    	 * @return
+    	 */
+    	public String description();
+    }
+
+
+然后分别是武器、戒指、护腕、鞋子
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 武器
+     * 攻击力20
+     * @author zhy
+     * 
+     */
+    public class ArmEquip implements IEquip
+    {
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 20;
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return "屠龙刀";
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 戒指
+     * 攻击力 5
+     * @author zhy
+     *
+     */
+    public class RingEquip implements IEquip
+    {
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 5;
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return "圣战戒指";
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 护腕
+     * 攻击力 5
+     * @author zhy
+     *
+     */
+    public class WristEquip implements IEquip
+    {
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 5;
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return "圣战护腕";
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 鞋子
+     * 攻击力 5
+     * @author zhy
+     * 
+     */
+    public class ShoeEquip implements IEquip
+    {
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 5;
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return "圣战靴子";
+    	}
+     
+    }
+
+
+接下来当然是装饰品，宝石了，首先超类
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 装饰品的接口
+     * @author zhy
+     *
+     */
+    public interface IEquipDecorator extends IEquip
+    {
+    	
+    }
+
+
+下来蓝宝石、黄宝石、红宝石
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 蓝宝石装饰品
+     * 每颗攻击力+5
+     * @author zhy
+     * 
+     */
+    public class BlueGemDecorator implements IEquipDecorator
+    {
+    	/**
+    	 * 每个装饰品维护一个装备
+    	 */
+    	private IEquip equip;
+     
+    	public BlueGemDecorator(IEquip equip)
+    	{
+    		this.equip = equip;
+    	}
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 5 + equip.caculateAttack();
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return equip.description() + "+ 蓝宝石";
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 黄宝石装饰品
+     * 每颗攻击力+10
+     * @author zhy
+     * 
+     */
+    public class YellowGemDecorator implements IEquipDecorator
+    {
+    	/**
+    	 * 每个装饰品维护一个装备
+    	 */
+    	private IEquip equip;
+     
+    	public YellowGemDecorator(IEquip equip)
+    	{
+    		this.equip = equip;
+    	}
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 10 + equip.caculateAttack();
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return equip.description() + "+ 黄宝石";
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.decorator;
+     
+    /**
+     * 红宝石装饰品 每颗攻击力+15
+     * 
+     * @author zhy
+     * 
+     */
+    public class RedGemDecorator implements IEquipDecorator
+    {
+    	/**
+    	 * 每个装饰品维护一个装备
+    	 */
+    	private IEquip equip;
+     
+    	public RedGemDecorator(IEquip equip)
+    	{
+    		this.equip = equip;
+    	}
+     
+    	@Override
+    	public int caculateAttack()
+    	{
+    		return 15 + equip.caculateAttack();
+    	}
+     
+    	@Override
+    	public String description()
+    	{
+    		return equip.description() + "+ 红宝石";
+    	}
+     
+    }
+
+
+好了，到此结束，我们已经实现了需求的功能了，是不是每个类都很清晰加简单，下面看测试：
+
+    package com.zhy.pattern.decorator;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		// 一个镶嵌2颗红宝石，1颗蓝宝石的靴子
+    		System.out.println(" 一个镶嵌2颗红宝石，1颗蓝宝石的靴子");
+    		IEquip equip = new RedGemDecorator(new RedGemDecorator(new BlueGemDecorator(new ShoeEquip())));
+    		System.out.println("攻击力  : " + equip.caculateAttack());
+    		System.out.println("描述 :" + equip.description());
+    		System.out.println("-------");
+    		// 一个镶嵌1颗红宝石，1颗蓝宝石的武器
+    		System.out.println(" 一个镶嵌1颗红宝石，1颗蓝宝石,1颗黄宝石的武器");
+    		equip = new RedGemDecorator(new BlueGemDecorator(new YellowGemDecorator(new ArmEquip())));
+    		System.out.println("攻击力  : " + equip.caculateAttack());
+    		System.out.println("描述 :" + equip.description());
+    		System.out.println("-------");
+    	}
+    }
+
+
+输出：
+
+     一个镶嵌2颗红宝石，1颗蓝宝石的靴子
+    攻击力  : 40
+    描述 :圣战靴子+ 蓝宝石+ 红宝石+ 红宝石
+    -------
+     一个镶嵌1颗红宝石，1颗蓝宝石,1颗黄宝石的武器
+    攻击力  : 50
+    描述 :屠龙刀+ 黄宝石+ 蓝宝石+ 红宝石
+    -------
+
+
+赞不赞，要是需求随便多几个装备，几种宝石，我们随随便便就可以加上，然后开开心心下班。
+
+
+好了，恭喜你，你又学会了一个设计模式，装饰者模式。
+
+现在根据例子对定义的理解，不用我多说吧。
+
+
+Java的API中也有装饰者模式的身影，如果你初学Java，一定记得Java里面的各种流，很痛苦吧，但是当你明白你们的设计之后就会感觉清晰很多。
+
+
+把InputStream看作我们的IEquip，把FilterInputStream看作我们的IEquipDecorator，是不是和我们的设计几乎一样。
+
+设计模式 外观模式
+
+外观模式（Facade Pattern）定义：提供一个统一的接口，用来访问子系统中的一群接口，外观定义了一个高层的接口，让子系统更容易使用。其实就是为了方便客户的使用，把一群操作，封装成一个方法。
+
+举个例子：我比较喜欢看电影，于是买了投影仪、电脑、音响、设计了房间的灯光、买了爆米花机，然后我想看电影的时候，我需要：
+
+1、打开爆米花机
+
+2、制作爆米花
+
+3、将灯光调暗
+
+4、打开投影仪
+
+5、放下投影仪投影区
+
+6、打开电脑
+
+7、打开播放器
+
+8、将播放器音调设为环绕立体声
+
+...
+
+尼玛，花了一笔钱，看电影还要这么多的步骤，太累了，而且看完还要一个一个关掉。
+
+所有，我们使用外观模式解决这些复杂的步骤，轻松享受电影：
+
+    package com.zhy.pattern.facade;
+     
+    public class HomeTheaterFacade
+    {
+    	private Computer computer;
+    	private Player player;
+    	private Light light;
+    	private Projector projector;
+    	private PopcornPopper popper;
+     
+    	public HomeTheaterFacade(Computer computer, Player player, Light light, Projector projector, PopcornPopper popper)
+    	{
+    		this.computer = computer;
+    		this.player = player;
+    		this.light = light;
+    		this.projector = projector;
+    		this.popper = popper;
+    	}
+     
+    	public void watchMovie()
+    	{
+    		/**
+    		 *  1、打开爆米花机
+    			2、制作爆米花
+    			3、将灯光调暗
+    			4、打开投影仪
+    			5、放下投影仪投影区
+    			6、打开电脑
+    			7、打开播放器
+    			8、将播放器音调设为环绕立体声
+    		 */
+    		popper.on();
+    		popper.makePopcorn();
+    		light.down();
+    		projector.on();
+    		projector.open();
+    		computer.on();
+    		player.on();
+    		player.make3DListener();
+    	}
+    	
+    	public void stopMovie()
+    	{
+    		popper.off();
+    		popper.stopMakePopcorn();
+    		light.up();
+    		projector.close();
+    		projector.off();
+    		player.off();
+    		computer.off();
+    	}
+    }
+
+
+可以看到，我们定义了一个类，然后可以让我一键享受看电影了，看完，一键关闭，享受多了。
+
+外观模式：一般用于需要简化一个很大的接口，或者一群复杂的接口的时候。
+
+设计模式 模版方法模式 
+
+模版方法模式定义：定义了一个算法的骨架，而将一些步骤延迟到子类中，模版方法使得子类可以在不改变算法结构的情况下，重新定义算法的步骤。
+
+简单看下定义，模版方法定义了一个算法的步骤，并且允许子类为一个或多个步骤提供实现。定义还算清晰，下面来个例子展示下本公司的上班情况（纯属娱乐，如有雷同，请对号入座）。
+简单描述一下：本公司有程序猿、测试、HR、项目经理等人，下面使用模版方法模式，记录下所有人员的上班情况：
+
+首先来个超类，超类中定义了一个workOneDay方法，设置为作为算法的骨架：
+
+    package com.zhy.pattern.template;
+     
+    public abstract class Worker
+    {
+    	protected String name;
+     
+    	public Worker(String name)
+    	{
+    		this.name = name;
+    	}
+     
+    	/**
+    	 * 记录一天的工作
+    	 */
+    	public final void workOneDay()
+    	{
+     
+    		System.out.println("-----------------work start ---------------");
+    		enterCompany();
+    		computerOn();
+    		work();
+    		computerOff();
+    		exitCompany();
+    		System.out.println("-----------------work end ---------------");
+     
+    	}
+     
+    	/**
+    	 * 工作
+    	 */
+    	public abstract void work();
+     
+    	/**
+    	 * 关闭电脑
+    	 */
+    	private void computerOff()
+    	{
+    		System.out.println(name + "关闭电脑");
+    	}
+     
+    	/**
+    	 * 打开电脑
+    	 */
+    	private void computerOn()
+    	{
+    		System.out.println(name + "打开电脑");
+    	}
+     
+    	/**
+    	 * 进入公司
+    	 */
+    	public void enterCompany()
+    	{
+    		System.out.println(name + "进入公司");
+    	}
+     
+    	/**
+    	 * 离开公司
+    	 */
+    	public void exitCompany()
+    	{
+    		System.out.println(name + "离开公司");
+    	}
+     
+    }
+
+
+定义了一个上班（算法）的骨架，包含以下步骤：
+
+a、进入公司
+
+b、打开电脑
+
+c、上班情况
+
+d、关闭电脑
+
+e、离开公司
+
+可以看到，a、b、d、e我们在超类中已经实现，子类仅实现work这个抽象方法，记录每天的上班情况。下面各类屌丝入场：
+
+程序猿：
+
+    package com.zhy.pattern.template;
+     
+    public class ITWorker extends Worker
+    {
+     
+    	public ITWorker(String name)
+    	{
+    		super(name);
+    	}
+     
+    	@Override
+    	public void work()
+    	{
+    		System.out.println(name + "写程序-测bug-fix bug");
+    	}
+     
+    }
+
+
+HR：
+
+    package com.zhy.pattern.template;
+     
+    public class HRWorker extends Worker
+    {
+     
+    	public HRWorker(String name)
+    	{
+    		super(name);
+    	}
+     
+    	@Override
+    	public void work()
+    	{
+    		System.out.println(name + "看简历-打电话-接电话");
+    	}
+     
+    }
+
+
+测试人员：
+
+    package com.zhy.pattern.template;
+     
+    public class QAWorker extends Worker
+    {
+     
+    	public QAWorker(String name)
+    	{
+    		super(name);
+    	}
+     
+    	@Override
+    	public void work()
+    	{
+    		System.out.println(name + "写测试用例-提交bug-写测试用例");
+    	}
+     
+    }
+
+
+项目经理：
+
+    package com.zhy.pattern.template;
+     
+    public class ManagerWorker extends Worker
+    {
+     
+    	public ManagerWorker(String name)
+    	{
+    		super(name);
+    	}
+     
+    	@Override
+    	public void work()
+    	{
+    		System.out.println(name + "打dota...");
+    	}
+     
+    }
+
+
+下面我们测试下：
+
+    package com.zhy.pattern.template;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+     
+    		Worker it1 = new ITWorker("鸿洋");
+    		it1.workOneDay();
+    		Worker it2 = new ITWorker("老张");
+    		it2.workOneDay();
+    		Worker hr = new HRWorker("迪迪");
+    		hr.workOneDay();
+    		Worker qa = new QAWorker("老李");
+    		qa.workOneDay();
+    		Worker pm = new ManagerWorker("坑货");
+    		pm.workOneDay();
+     
+    	}
+    }
+
+
+输出结果：
+
+    -----------------work start ---------------
+    鸿洋进入公司
+    鸿洋打开电脑
+    鸿洋写程序-测bug-fix bug
+    鸿洋关闭电脑
+    鸿洋离开公司
+    -----------------work end ---------------
+    -----------------work start ---------------
+    迪迪进入公司
+    迪迪打开电脑
+    迪迪看简历-打电话-接电话
+    迪迪关闭电脑
+    迪迪离开公司
+    -----------------work end ---------------
+    -----------------work start ---------------
+    老李进入公司
+    老李打开电脑
+    老李写测试用例-提交bug-写测试用例
+    老李关闭电脑
+    老李离开公司
+    -----------------work end ---------------
+    -----------------work start ---------------
+    坑货进入公司
+    坑货打开电脑
+    坑货打dota...
+    坑货关闭电脑
+    坑货离开公司
+    -----------------work end ---------------
+
+
+好了，恭喜你，又学会一个设计模式，模版方法模式。
+
+下面看下模版方法模式类图，和我们程序的类图：
+
+
+模版方式里面也可以可选的设置钩子，比如现在希望记录程序员离开公司的时间，我们就可以在超类中添加一个钩子：
+
+    public boolean isNeedPrintDate()
+    	{
+    		return false;
+    	}
+    	/**
+    	 * 离开公司
+    	 */
+    	public void exitCompany()
+    	{
+    		if (isNeedPrintDate())
+    		{
+    			System.out.print(new Date().toLocaleString()+"-->");
+    		}
+    		System.out.println(name + "离开公司");
+    	}
+
+
+超类中添加了一个isNeedPrintDate方法，且默认返回false，不打印时间。如果某子类需要调用打印时间，可以复写改钩子方法，返回true，比如，程序猿复写了这个方法：
+
+    package com.zhy.pattern.template;
+     
+    public class ITWorker extends Worker
+    {
+     
+    	public ITWorker(String name)
+    	{
+    		super(name);
+    	}
+     
+    	@Override
+    	public void work()
+    	{
+    		System.out.println(name + "写程序-测bug-fix bug");
+    	}
+     
+    	@Override
+    	public boolean isNeedPrintDate()
+    	{
+    		return true;
+    	}
+    	
+    }
+
+最后再看下测试结果：
+
+    -----------------work start ---------------
+    鸿洋进入公司
+    鸿洋打开电脑
+    鸿洋写程序-测bug-fix bug
+    鸿洋关闭电脑
+    2014-5-19 19:17:05-->鸿洋离开公司
+    -----------------work end ---------------
+
+好了，关于钩子，超类中可提供默认实现或者空实现，子类可覆盖或者不覆盖，具体根据需求来定。
+
+最近恰好，再写一个爬虫程序，用到了模版方法模式，给大家分享下：
+
+需求分析：程序需要对特定的20个网站进行抓取数据；每个网站页面返回的结果数据不同，url不同，参数不同等；但是抓取的过程是一致的。
+
+于是我就这样的设计：
+
+a、定义一个规则Rule类（包含了：url，params，request_method，以及返回哪块数据【根据选择器】）
+
+b、通过Rule进行抓取数据
+
+c、对数据进行处理
+
+我把上面3个步骤定义了算法的骨架，b为超类实现，a、c由子类实现：
+
+    package com.zhy.pattern.template;
+     
+    public abstract class AbsExtractInfo
+    {
+     
+    	
+    	/**
+    	 * 抓取的算法骨架
+    	 */
+    	public void extract()
+    	{
+    		Rule rule = generateRule() ;
+    		List<Element> eles = getInfosByRule(rule);
+    		dealResult(eles);
+    	}
+    	
+    	/**
+    	 * 生成一个Rule
+    	 * @return
+    	 */
+    	public abstract Rule generateRule();
+    	
+    	/**
+    	 * 抓取的实现
+    	 * @param rule
+    	 * @return
+    	 */
+    	private List<Element> getInfosByRule(Rule rule)
+    	{
+    		// the implements omitted 
+    	}
+    	/**
+    	 * 处理抓取的结果
+    	 * @param results
+    	 */
+    	public void dealResult(List<Element> results);
+    }
+
+
+其中GenerateRule这个方法，恰好是工厂模式中的抽象方法模式（定义一个创建对象的接口，但由子类决定要实例化的类是哪一个。工厂方法模式把类实例化的过程推迟到子类），如果你忘记了，可以查看设计模式 工厂模式 从卖肉夹馍说起
+
+设计模式 状态模式
+
+状态模式定义：允许对象在内部状态改变时改变它的行为，对象看起来好像修改了它的类。定义又开始模糊了，理一下，当对象的内部状态改变时，它的行为跟随状态的改变而改变了，看起来好像重新初始化了一个类似的。
+
+下面使用个例子来说明状态模式的用法，现在有个自动售货机的代码需要我们来写，状态图如下：
+
+
+分析一个这个状态图：
+
+a、包含4个状态（我们使用4个int型常量来表示）
+
+b、包含3个暴露在外的方法（投币、退币、转动手柄）
+
+c、我们需要处理每个状态下，用户都可以触发这三个动作。
+
+下面我们根据分析的结果，写出代码：
+
+    package com.zhy.pattern.status;
+     
+    /**
+     * 自动售货机
+     * 
+     * @author zhy
+     * 
+     */
+    public class VendingMachine
+    {
+     
+    	/**
+    	 * 已投币
+    	 */
+    	private final static int HAS_MONEY = 0;
+    	/**
+    	 * 未投币
+    	 */
+    	private final static int NO_MONEY = 1;
+    	/**
+    	 * 售出商品
+    	 */
+    	private final static int SOLD = 2;
+    	/**
+    	 * 商品售罄
+    	 */
+    	private final static int SOLD_OUT = 3;
+     
+    	private int currentStatus = NO_MONEY;
+    	/**
+    	 * 商品数量
+    	 */
+    	private int count = 0;
+     
+    	public VendingMachine(int count)
+    	{
+    		this.count = count;
+    		if (count > 0)
+    		{
+    			currentStatus = NO_MONEY;
+    		}
+    	}
+     
+    	/**
+    	 * 投入硬币，任何状态用户都可能投币
+    	 */
+    	public void insertMoney()
+    	{
+    		switch (currentStatus)
+    		{
+    		case NO_MONEY:
+    			currentStatus = HAS_MONEY;
+    			System.out.println("成功投入硬币");
+    			break;
+    		case HAS_MONEY:
+    			System.out.println("已经有硬币，无需投币");
+    			break;
+    		case SOLD:
+    			System.out.println("请稍等...");
+    			break;
+    		case SOLD_OUT:
+    			System.out.println("商品已经售罄，请勿投币");
+    			break;
+     
+    		}
+    	}
+     
+    	/**
+    	 * 退币，任何状态用户都可能退币
+    	 */
+    	public void backMoney()
+    	{
+    		switch (currentStatus)
+    		{
+    		case NO_MONEY:
+    			System.out.println("您未投入硬币");
+    			break;
+    		case HAS_MONEY:
+    			currentStatus = NO_MONEY;
+    			System.out.println("退币成功");
+    			break;
+    		case SOLD:
+    			System.out.println("您已经买了糖果...");
+    			break;
+    		case SOLD_OUT:
+    			System.out.println("您未投币...");
+    			break;
+    		}
+    	}
+     
+    	/**
+    	 * 转动手柄购买,任何状态用户都可能转动手柄
+    	 */
+    	public void turnCrank()
+    	{
+    		switch (currentStatus)
+    		{
+    		case NO_MONEY:
+    			System.out.println("请先投入硬币");
+    			break;
+    		case HAS_MONEY:
+    			System.out.println("正在出商品....");
+    			currentStatus = SOLD;
+    			dispense();
+    			break;
+    		case SOLD:
+    			System.out.println("连续转动也没用...");
+    			break;
+    		case SOLD_OUT:
+    			System.out.println("商品已经售罄");
+    			break;
+     
+    		}
+    	}
+     
+    	/**
+    	 * 发放商品
+    	 */
+    	private void dispense()
+    	{
+     
+    		switch (currentStatus)
+    		{
+    		case NO_MONEY:
+    		case HAS_MONEY:
+    		case SOLD_OUT:
+    			throw new IllegalStateException("非法的状态...");
+    		case SOLD:
+    			count--;
+    			System.out.println("发出商品...");
+    			if (count == 0)
+    			{
+    				System.out.println("商品售罄");
+    				currentStatus = SOLD_OUT;
+    			} else
+    			{
+    				currentStatus = NO_MONEY;
+    			}
+    			break;
+     
+    		}
+     
+    	}
+    }
+
+
+针对用户的每个动作，我们考虑了在任何状态下发生，并做了一定处理。下面进行一些测试：
+
+    package com.zhy.pattern.status;
+     
+    public class TestTra
+    {
+    	public static void main(String[] args)
+    	{
+    		VendingMachine machine = new VendingMachine(10);
+    		machine.insertMoney();
+    		machine.backMoney();
+     
+    		System.out.println("-----------");
+     
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		
+    		System.out.println("----------压力测试-----");
+    		machine.insertMoney();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.turnCrank();
+    		machine.backMoney();
+    		machine.turnCrank();
+     
+    	}
+    }
+
+输出结果：
+
+    成功投入硬币
+    退币成功
+    -----------
+    成功投入硬币
+    正在出商品....
+    发出商品...
+    ----------压力测试-----
+    成功投入硬币
+    已经有硬币，无需投币
+    正在出商品....
+    发出商品...
+    请先投入硬币
+    您未投入硬币
+    请先投入硬币
+
+感觉还是不错的，基本实现了功能，但是有些事情是不可避免的，那就是需求的变化，现在为了提升销量，当用户每次转动手柄买商品的时候，有10%的几率赠送一瓶。
+
+现在的状态图发生了变化，当用户转动手柄时，可能会达到一个中奖的状态：图如下：
+
+如果在我们刚写的代码上直接添加，则需要在每个动作的switch中添加判断条件，且非常容易出错。所以现在我们要考虑重新设计我们的代码，我们考虑把每个状态写状态类，负责实现在对应动作下的行为，然后自动售货机在不能的状态间切换：
+
+下面开始重构，我们现在有5种状态，对应4个动作（投币、退币、转动手柄、发出商品），下面首先定义一个状态的超类型：
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 状态的接口
+     * @author zhy
+     *
+     */
+    public interface State
+    {
+    	/**
+    	 * 放钱
+    	 */
+    	public void insertMoney();
+    	/**
+    	 * 退钱
+    	 */
+    	public void backMoney();
+    	/**
+    	 * 转动曲柄
+    	 */
+    	public void turnCrank();
+    	/**
+    	 * 出商品
+    	 */
+    	public void dispense();
+    }
+
+
+然后分别是每个状态的实现：
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 没钱的状态
+     * @author zhy
+     *
+     */
+    public class NoMoneyState implements State
+    {
+     
+    	private VendingMachine machine;
+     
+    	public NoMoneyState(VendingMachine machine)
+    	{
+    		this.machine = machine;
+    		
+    	}
+    	
+    	@Override
+    	public void insertMoney()
+    	{
+    		System.out.println("投币成功");
+    		machine.setState(machine.getHasMoneyState());
+    	}
+     
+    	@Override
+    	public void backMoney()
+    	{
+    		System.out.println("您未投币，想退钱？...");
+    	}
+     
+    	@Override
+    	public void turnCrank()
+    	{
+    		System.out.println("您未投币，想拿东西么？...");
+    	}
+     
+    	@Override
+    	public void dispense()
+    	{
+    		throw new IllegalStateException("非法状态！");
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.status.b;
+     
+    import java.util.Random;
+     
+    /**
+     * 已投入钱的状态
+     * 
+     * @author zhy
+     * 
+     */
+    public class HasMoneyState implements State
+    {
+     
+    	private VendingMachine machine;
+    	private Random random = new Random();
+     
+    	public HasMoneyState(VendingMachine machine)
+    	{
+    		this.machine = machine;
+    	}
+     
+    	@Override
+    	public void insertMoney()
+    	{
+    		System.out.println("您已经投过币了，无需再投....");
+    	}
+     
+    	@Override
+    	public void backMoney()
+    	{
+    		System.out.println("退币成功");
+     
+    		machine.setState(machine.getNoMoneyState());
+    	}
+     
+    	@Override
+    	public void turnCrank()
+    	{
+    		System.out.println("你转动了手柄");
+    		int winner = random.nextInt(10);
+    		if (winner == 0 && machine.getCount() > 1)
+    		{
+    			machine.setState(machine.getWinnerState());
+    		} else
+    		{
+    			machine.setState(machine.getSoldState());
+    		}
+    	}
+     
+    	@Override
+    	public void dispense()
+    	{
+    		throw new IllegalStateException("非法状态！");
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 售罄的状态
+     * 
+     * @author zhy
+     * 
+     */
+    public class SoldOutState implements State
+    {
+     
+    	private VendingMachine machine;
+     
+    	public SoldOutState(VendingMachine machine)
+    	{
+    		this.machine = machine;
+    	}
+     
+    	@Override
+    	public void insertMoney()
+    	{
+    		System.out.println("投币失败，商品已售罄");
+    	}
+     
+    	@Override
+    	public void backMoney()
+    	{
+    		System.out.println("您未投币，想退钱么？...");
+    	}
+     
+    	@Override
+    	public void turnCrank()
+    	{
+    		System.out.println("商品售罄，转动手柄也木有用");
+    	}
+     
+    	@Override
+    	public void dispense()
+    	{
+    		throw new IllegalStateException("非法状态！");
+    	}
+     
+    }
+
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 准备出商品的状态,该状态下，不会有任何用户的操作
+     * 
+     * @author zhy
+     * 
+     */
+    public class SoldState implements State
+    {
+     
+    	private VendingMachine machine;
+     
+    	public SoldState(VendingMachine machine)
+    	{
+    		this.machine = machine;
+    	}
+     
+    	@Override
+    	public void insertMoney()
+    	{
+    		System.out.println("正在出货，请勿投币");
+    	}
+     
+    	@Override
+    	public void backMoney()
+    	{
+    		System.out.println("正在出货，没有可退的钱");
+    	}
+     
+    	@Override
+    	public void turnCrank()
+    	{
+    		System.out.println("正在出货，请勿重复转动手柄");
+    	}
+     
+    	@Override
+    	public void dispense()
+    	{
+    		machine.dispense();
+    		if (machine.getCount() > 0)
+    		{
+    			machine.setState(machine.getNoMoneyState());
+    		} else
+    		{
+    			System.out.println("商品已经售罄");
+    			machine.setState(machine.getSoldOutState());
+    		}
+    	}
+    }
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 中奖的状态，该状态下不会有任何用户的操作
+     * 
+     * @author zhy
+     * 
+     */
+    public class WinnerState implements State
+    {
+     
+    	private VendingMachine machine;
+     
+    	public WinnerState(VendingMachine machine)
+    	{
+    		this.machine = machine;
+    	}
+     
+    	@Override
+    	public void insertMoney()
+    	{
+    		throw new IllegalStateException("非法状态");
+    	}
+     
+    	@Override
+    	public void backMoney()
+    	{
+    		throw new IllegalStateException("非法状态");
+    	}
+     
+    	@Override
+    	public void turnCrank()
+    	{
+    		throw new IllegalStateException("非法状态");
+    	}
+     
+    	@Override
+    	public void dispense()
+    	{
+    		System.out.println("你中奖了，恭喜你，将得到2件商品");
+    		machine.dispense();
+     
+    		if (machine.getCount() == 0)
+    		{
+    			System.out.println("商品已经售罄");
+    			machine.setState(machine.getSoldOutState());
+    		} else
+    		{
+    			machine.dispense();
+    			if (machine.getCount() > 0)
+    			{
+    				machine.setState(machine.getNoMoneyState());
+    			} else
+    			{
+    				System.out.println("商品已经售罄");
+    				machine.setState(machine.getSoldOutState());
+    			}
+    			
+    		}
+     
+    	}
+     
+    }
+
+
+
+最后是自动售货机的代码：
+
+    package com.zhy.pattern.status.b;
+     
+    /**
+     * 自动售货机
+     * 
+     * @author zhy
+     * 
+     */
+    public class VendingMachine
+    {
+    	private State noMoneyState;
+    	private State hasMoneyState;
+    	private State soldState;
+    	private State soldOutState;
+    	private State winnerState ; 
+     
+    	private int count = 0;
+    	private State currentState = noMoneyState;
+     
+    	public VendingMachine(int count)
+    	{
+    		noMoneyState = new NoMoneyState(this);
+    		hasMoneyState = new HasMoneyState(this);
+    		soldState = new SoldState(this);
+    		soldOutState = new SoldOutState(this);
+    		winnerState = new WinnerState(this);
+     
+    		if (count > 0)
+    		{
+    			this.count = count;
+    			currentState = noMoneyState;
+    		}
+    	}
+     
+    	public void insertMoney()
+    	{
+    		currentState.insertMoney();
+    	}
+     
+    	public void backMoney()
+    	{
+    		currentState.backMoney();
+    	}
+     
+    	public void turnCrank()
+    	{
+    		currentState.turnCrank();
+    		if (currentState == soldState || currentState == winnerState)
+    			currentState.dispense();
+    	}
+     
+    	public void dispense()
+    	{
+    		System.out.println("发出一件商品...");
+    		if (count != 0)
+    		{
+    			count -= 1;
+    		}
+    	}
+     
+    	public void setState(State state)
+    	{
+    		this.currentState = state;
+    	}
+     
+    	//getter setter omitted ...
+     
+    }
+
+
+可以看到，我们现在把每个状态对应于动作的行为局部化到了状态自己的类中实现，不仅增加了扩展性而且使代码的阅读性大幅度的提高。以后再添加状态，只需要针对新添加的状态的实现类，并在自动售货机中添加此状态即可。
+
+下面进行一些测试：
+
+    package com.zhy.pattern.status.b;
+     
+    public class Test
+    {
+    	public static void main(String[] args)
+    	{
+    		VendingMachine machine = new VendingMachine(10);
+    		machine.insertMoney();
+    		machine.backMoney();
+     
+    		System.out.println("----我要中奖----");
+     
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+    		machine.insertMoney();
+    		machine.turnCrank();
+     
+    		System.out.println("-------压力测试------");
+     
+    		machine.insertMoney();
+    		machine.backMoney();
+    		machine.backMoney();
+    		machine.turnCrank();// 无效操作
+    		machine.turnCrank();// 无效操作
+    		machine.backMoney();
+     
+    	}
+    }
+
+
+输出结果：
+
+    投币成功
+    退币成功
+    ----我要中奖----
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    发出一件商品...
+    投币成功
+    你转动了手柄
+    你中奖了，恭喜你，将得到2件商品
+    发出一件商品...
+    发出一件商品...
+    -------压力测试------
+    投币成功
+    退币成功
+    您未投币，想退钱？...
+    您未投币，想拿东西么？...
+    您未投币，想拿东西么？...
+    您未投币，想退钱？...
+
+
+恭喜你，又学会了一个设计模式，状态模式。
+
+设计模式 建造者模式
+
+定义：将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。
+
+类型：创建类模式
+
+类图：
+
+builder-pattern
+
+四个要素
+
+    产品类：一般是一个较为复杂的对象，也就是说创建对象的过程比较复杂，一般会有比较多的代码量。在本类图中，产品类是一个具体的类，而非抽象类。实际编程中，产品类可以是由一个抽象类与它的不同实现组成，也可以是由多个抽象类与他们的实现组成。
+    抽象建造者：引入抽象建造者的目的，是为了将建造的具体过程交与它的子类来实现。这样更容易扩展。一般至少会有两个抽象方法，一个用来建造产品，一个是用来返回产品。
+    建造者：实现抽象类的所有未实现的方法，具体来说一般是两项任务：组建产品；返回组建好的产品。
+    导演类：负责调用适当的建造者来组建产品，导演类一般不与产品类发生依赖关系，与导演类直接交互的是建造者类。一般来说，导演类被用来封装程序中易变的部分。
+
+代码实现
+
+    class Product {
+        private String name;
+        private String type;
+        public void showProduct(){
+            System.out.println("名称："+name);
+            System.out.println("型号："+type);
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+
+    abstract class Builder {
+        public abstract void setPart(String arg1, String arg2);
+        public abstract Product getProduct();
+    }
+    class ConcreteBuilder extends Builder {
+        private Product product = new Product();
+
+        public Product getProduct() {
+            return product;
+        }
+
+        public void setPart(String arg1, String arg2) {
+            product.setName(arg1);
+            product.setType(arg2);
+        }
+    }
+
+    public class Director {
+        private Builder builder = new ConcreteBuilder();
+        public Product getAProduct(){
+            builder.setPart("宝马汽车","X7");
+            return builder.getProduct();
+        }
+        public Product getBProduct(){
+            builder.setPart("奥迪汽车","Q5");
+            return builder.getProduct();
+        }
+    }
+    public class Client {
+        public static void main(String[] args){
+            Director director = new Director();
+            Product product1 = director.getAProduct();
+            product1.showProduct();
+
+            Product product2 = director.getBProduct();
+            product2.showProduct();
+        }
+    }
+
+建造者模式的优点
+
+首先，建造者模式的封装性很好。使用建造者模式可以有效的封装变化，在使用建造者模式的场景中，一般产品类和建造者类是比较稳定的，因此，将主要的业务逻辑封装在导演类中对整体而言可以取得比较好的稳定性。
+
+其次，建造者模式很容易进行扩展。如果有新的需求，通过实现一个新的建造者类就可以完成，基本上不用修改之前已经测试通过的代码，因此也就不会对原有功能引入风险。
+
+建造者模式与工厂模式的区别
+
+我们可以看到，建造者模式与工厂模式是极为相似的，总体上，建造者模式仅仅只比工厂模式多了一个"导演类"的角色。在建造者模式的类图中，假如把这个导演类看做是最终调用的客户端，那么图中剩余的部分就可以看作是一个简单的工厂模式了。
+
+与工厂模式相比，建造者模式一般用来创建更为复杂的对象，因为对象的创建过程更为复杂，因此将对象的创建过程独立出来组成一个新的类——导演类。也就是说，工厂模式是将对象的全部创建过程封装在工厂类中，由工厂类向客户端提供最终的产品；而建造者模式中，建造者类一般只提供产品类中各个组件的建造，而将具体建造过程交付给导演类。由导演类负责将各个组件按照特定的规则组建为产品，然后将组建好的产品交付给客户端。
+
+总结
+
+建造者模式与工厂模式类似，他们都是建造者模式，适用的场景也很相似。一般来说，如果产品的建造很复杂，那么请用工厂模式；如果产品的建造更复杂，那么请用建造者模式。
+
+设计模式 原型模式
+
+原型模式（Prototype Pattern）是用于创建重复的对象，同时又能保证性能。这种类型的设计模式属于创建型模式，它提供了一种创建对象的最佳方式。
+
+这种模式是实现了一个原型接口，该接口用于创建当前对象的克隆。当直接创建对象的代价比较大时，则采用这种模式。例如，一个对象需要在一个高代价的数据库操作之后被创建。我们可以缓存该对象，在下一个请求时返回它的克隆，在需要的时候更新数据库，以此来减少数据库调用。
+介绍
+
+意图：用原型实例指定创建对象的种类，并且通过拷贝这些原型创建新的对象。
+
+主要解决：在运行期建立和删除原型。
+
+何时使用： 1、当一个系统应该独立于它的产品创建，构成和表示时。 2、当要实例化的类是在运行时刻指定时，例如，通过动态装载。 3、为了避免创建一个与产品类层次平行的工厂类层次时。 4、当一个类的实例只能有几个不同状态组合中的一种时。建立相应数目的原型并克隆它们可能比每次用合适的状态手工实例化该类更方便一些。
+
+如何解决：利用已有的一个原型对象，快速地生成和原型对象一样的实例。
+
+关键代码： 1、实现克隆操作，在 JAVA 继承 Cloneable，重写 clone()，在 .NET 中可以使用 Object 类的 MemberwiseClone() 方法来实现对象的浅拷贝或通过序列化的方式来实现深拷贝。 2、原型模式同样用于隔离类对象的使用者和具体类型（易变类）之间的耦合关系，它同样要求这些"易变类"拥有稳定的接口。
+
+应用实例： 1、细胞分裂。 2、JAVA 中的 Object clone() 方法。
+
+优点： 1、性能提高。 2、逃避构造函数的约束。
+
+缺点： 1、配备克隆方法需要对类的功能进行通盘考虑，这对于全新的类不是很难，但对于已有的类不一定很容易，特别当一个类引用不支持串行化的间接对象，或者引用含有循环结构的时候。 2、必须实现 Cloneable 接口。
+
+使用场景： 1、资源优化场景。 2、类初始化需要消化非常多的资源，这个资源包括数据、硬件资源等。 3、性能和安全要求的场景。 4、通过 new 产生一个对象需要非常繁琐的数据准备或访问权限，则可以使用原型模式。 5、一个对象多个修改者的场景。 6、一个对象需要提供给其他对象访问，而且各个调用者可能都需要修改其值时，可以考虑使用原型模式拷贝多个对象供调用者使用。 7、在实际项目中，原型模式很少单独出现，一般是和工厂方法模式一起出现，通过 clone 的方法创建一个对象，然后由工厂方法提供给调用者。原型模式已经与 Java 融为浑然一体，大家可以随手拿来使用。
+
+注意事项：与通过对一个类进行实例化来构造新对象不同的是，原型模式是通过拷贝一个现有对象生成新对象的。浅拷贝实现 Cloneable，重写，深拷贝是通过实现 Serializable 读取二进制流。
+实现
+
+我们将创建一个抽象类 Shape 和扩展了 Shape 类的实体类。下一步是定义类 ShapeCache，该类把 shape 对象存储在一个 Hashtable 中，并在请求的时候返回它们的克隆。
+
+PrototypePatternDemo 类使用 ShapeCache 类来获取 Shape 对象。
+原型模式的 UML 图
+步骤 1
+
+创建一个实现了 Cloneable 接口的抽象类。
+Shape.java
+public abstract class Shape implements Cloneable {
+   
+   private String id;
+   protected String type;
+   
+   abstract void draw();
+   
+   public String getType(){
+      return type;
+   }
+   
+   public String getId() {
+      return id;
+   }
+   
+   public void setId(String id) {
+      this.id = id;
+   }
+   
+   public Object clone() {
+      Object clone = null;
+      try {
+         clone = super.clone();
+      } catch (CloneNotSupportedException e) {
+         e.printStackTrace();
+      }
+      return clone;
+   }
+}
+步骤 2
+
+创建扩展了上面抽象类的实体类。
+Rectangle.java
+public class Rectangle extends Shape {
+ 
+   public Rectangle(){
+     type = "Rectangle";
+   }
+ 
+   @Override
+   public void draw() {
+      System.out.println("Inside Rectangle::draw() method.");
+   }
+}
+Square.java
+public class Square extends Shape {
+ 
+   public Square(){
+     type = "Square";
+   }
+ 
+   @Override
+   public void draw() {
+      System.out.println("Inside Square::draw() method.");
+   }
+}
+Circle.java
+public class Circle extends Shape {
+ 
+   public Circle(){
+     type = "Circle";
+   }
+ 
+   @Override
+   public void draw() {
+      System.out.println("Inside Circle::draw() method.");
+   }
+}
+步骤 3
+
+创建一个类，从数据库获取实体类，并把它们存储在一个 Hashtable 中。
+ShapeCache.java
+import java.util.Hashtable;
+ 
+public class ShapeCache {
+    
+   private static Hashtable<String, Shape> shapeMap 
+      = new Hashtable<String, Shape>();
+ 
+   public static Shape getShape(String shapeId) {
+      Shape cachedShape = shapeMap.get(shapeId);
+      return (Shape) cachedShape.clone();
+   }
+ 
+   // 对每种形状都运行数据库查询，并创建该形状
+   // shapeMap.put(shapeKey, shape);
+   // 例如，我们要添加三种形状
+   public static void loadCache() {
+      Circle circle = new Circle();
+      circle.setId("1");
+      shapeMap.put(circle.getId(),circle);
+ 
+      Square square = new Square();
+      square.setId("2");
+      shapeMap.put(square.getId(),square);
+ 
+      Rectangle rectangle = new Rectangle();
+      rectangle.setId("3");
+      shapeMap.put(rectangle.getId(),rectangle);
+   }
+}
+步骤 4
+
+PrototypePatternDemo 使用 ShapeCache 类来获取存储在 Hashtable 中的形状的克隆。
+PrototypePatternDemo.java
+public class PrototypePatternDemo {
+   public static void main(String[] args) {
+      ShapeCache.loadCache();
+ 
+      Shape clonedShape = (Shape) ShapeCache.getShape("1");
+      System.out.println("Shape : " + clonedShape.getType());        
+ 
+      Shape clonedShape2 = (Shape) ShapeCache.getShape("2");
+      System.out.println("Shape : " + clonedShape2.getType());        
+ 
+      Shape clonedShape3 = (Shape) ShapeCache.getShape("3");
+      System.out.println("Shape : " + clonedShape3.getType());        
+   }
+}
+步骤 5
+
+执行程序，输出结果：
+
+Shape : Circle
+Shape : Square
+Shape : Rectangle
+
+享元模式
+
+享元模式（Flyweight Pattern）主要用于减少创建对象的数量，以减少内存占用和提高性能。这种类型的设计模式属于结构型模式，它提供了减少对象数量从而改善应用所需的对象结构的方式。
+
+享元模式尝试重用现有的同类对象，如果未找到匹配的对象，则创建新对象。我们将通过创建 5 个对象来画出 20 个分布于不同位置的圆来演示这种模式。由于只有 5 种可用的颜色，所以 color 属性被用来检查现有的 Circle 对象。
+介绍
+
+意图：运用共享技术有效地支持大量细粒度的对象。
+
+主要解决：在有大量对象时，有可能会造成内存溢出，我们把其中共同的部分抽象出来，如果有相同的业务请求，直接返回在内存中已有的对象，避免重新创建。
+
+何时使用： 1、系统中有大量对象。 2、这些对象消耗大量内存。 3、这些对象的状态大部分可以外部化。 4、这些对象可以按照内蕴状态分为很多组，当把外蕴对象从对象中剔除出来时，每一组对象都可以用一个对象来代替。 5、系统不依赖于这些对象身份，这些对象是不可分辨的。
+
+如何解决：用唯一标识码判断，如果在内存中有，则返回这个唯一标识码所标识的对象。
+
+关键代码：用 HashMap 存储这些对象。
+
+应用实例： 1、JAVA 中的 String，如果有则返回，如果没有则创建一个字符串保存在字符串缓存池里面。 2、数据库的数据池。
+
+优点：大大减少对象的创建，降低系统的内存，使效率提高。
+
+缺点：提高了系统的复杂度，需要分离出外部状态和内部状态，而且外部状态具有固有化的性质，不应该随着内部状态的变化而变化，否则会造成系统的混乱。
+
+使用场景： 1、系统有大量相似对象。 2、需要缓冲池的场景。
+
+注意事项： 1、注意划分外部状态和内部状态，否则可能会引起线程安全问题。 2、这些类必须有一个工厂对象加以控制。
+实现
+
+我们将创建一个 Shape 接口和实现了 Shape 接口的实体类 Circle。下一步是定义工厂类 ShapeFactory。
+
+ShapeFactory 有一个 Circle 的 HashMap，其中键名为 Circle 对象的颜色。无论何时接收到请求，都会创建一个特定颜色的圆。ShapeFactory 检查它的 HashMap 中的 circle 对象，如果找到 Circle 对象，则返回该对象，否则将创建一个存储在 hashmap 中以备后续使用的新对象，并把该对象返回到客户端。
+
+FlyWeightPatternDemo 类使用 ShapeFactory 来获取 Shape 对象。它将向 ShapeFactory 传递信息（red / green / blue/ black / white），以便获取它所需对象的颜色。
+享元模式的 UML 图
+步骤 1
+
+创建一个接口。
+Shape.java
+public interface Shape {
+   void draw();
+}
+步骤 2
+
+创建实现接口的实体类。
+Circle.java
+public class Circle implements Shape {
+   private String color;
+   private int x;
+   private int y;
+   private int radius;
+ 
+   public Circle(String color){
+      this.color = color;     
+   }
+ 
+   public void setX(int x) {
+      this.x = x;
+   }
+ 
+   public void setY(int y) {
+      this.y = y;
+   }
+ 
+   public void setRadius(int radius) {
+      this.radius = radius;
+   }
+ 
+   @Override
+   public void draw() {
+      System.out.println("Circle: Draw() [Color : " + color 
+         +", x : " + x +", y :" + y +", radius :" + radius);
+   }
+}
+步骤 3
+
+创建一个工厂，生成基于给定信息的实体类的对象。
+ShapeFactory.java
+import java.util.HashMap;
+ 
+public class ShapeFactory {
+   private static final HashMap<String, Shape> circleMap = new HashMap<>();
+ 
+   public static Shape getCircle(String color) {
+      Circle circle = (Circle)circleMap.get(color);
+ 
+      if(circle == null) {
+         circle = new Circle(color);
+         circleMap.put(color, circle);
+         System.out.println("Creating circle of color : " + color);
+      }
+      return circle;
+   }
+}
+步骤 4
+
+使用该工厂，通过传递颜色信息来获取实体类的对象。
+FlyweightPatternDemo.java
+public class FlyweightPatternDemo {
+   private static final String colors[] = 
+      { "Red", "Green", "Blue", "White", "Black" };
+   public static void main(String[] args) {
+ 
+      for(int i=0; i < 20; ++i) {
+         Circle circle = 
+            (Circle)ShapeFactory.getCircle(getRandomColor());
+         circle.setX(getRandomX());
+         circle.setY(getRandomY());
+         circle.setRadius(100);
+         circle.draw();
+      }
+   }
+   private static String getRandomColor() {
+      return colors[(int)(Math.random()*colors.length)];
+   }
+   private static int getRandomX() {
+      return (int)(Math.random()*100 );
+   }
+   private static int getRandomY() {
+      return (int)(Math.random()*100);
+   }
+}
+步骤 5
+
+执行程序，输出结果：
+
+Creating circle of color : Black
+Circle: Draw() [Color : Black, x : 36, y :71, radius :100
+Creating circle of color : Green
+Circle: Draw() [Color : Green, x : 27, y :27, radius :100
+Creating circle of color : White
+Circle: Draw() [Color : White, x : 64, y :10, radius :100
+Creating circle of color : Red
+Circle: Draw() [Color : Red, x : 15, y :44, radius :100
+Circle: Draw() [Color : Green, x : 19, y :10, radius :100
+Circle: Draw() [Color : Green, x : 94, y :32, radius :100
+Circle: Draw() [Color : White, x : 69, y :98, radius :100
+Creating circle of color : Blue
+Circle: Draw() [Color : Blue, x : 13, y :4, radius :100
+Circle: Draw() [Color : Green, x : 21, y :21, radius :100
+Circle: Draw() [Color : Blue, x : 55, y :86, radius :100
+Circle: Draw() [Color : White, x : 90, y :70, radius :100
+Circle: Draw() [Color : Green, x : 78, y :3, radius :100
+Circle: Draw() [Color : Green, x : 64, y :89, radius :100
+Circle: Draw() [Color : Blue, x : 3, y :91, radius :100
+Circle: Draw() [Color : Blue, x : 62, y :82, radius :100
+Circle: Draw() [Color : Green, x : 97, y :61, radius :100
+Circle: Draw() [Color : Green, x : 86, y :12, radius :100
+Circle: Draw() [Color : Green, x : 38, y :93, radius :100
+Circle: Draw() [Color : Red, x : 76, y :82, radius :100
+Circle: Draw() [Color : Blue, x : 95, y :82, radius :100
+
+代理模式
+
+在代理模式（Proxy Pattern）中，一个类代表另一个类的功能。这种类型的设计模式属于结构型模式。
+
+在代理模式中，我们创建具有现有对象的对象，以便向外界提供功能接口。
+介绍
+
+意图：为其他对象提供一种代理以控制对这个对象的访问。
+
+主要解决：在直接访问对象时带来的问题，比如说：要访问的对象在远程的机器上。在面向对象系统中，有些对象由于某些原因（比如对象创建开销很大，或者某些操作需要安全控制，或者需要进程外的访问），直接访问会给使用者或者系统结构带来很多麻烦，我们可以在访问此对象时加上一个对此对象的访问层。
+
+何时使用：想在访问一个类时做一些控制。
+
+如何解决：增加中间层。
+
+关键代码：实现与被代理类组合。
+
+应用实例： 1、Windows 里面的快捷方式。 2、猪八戒去找高翠兰结果是孙悟空变的，可以这样理解：把高翠兰的外貌抽象出来，高翠兰本人和孙悟空都实现了这个接口，猪八戒访问高翠兰的时候看不出来这个是孙悟空，所以说孙悟空是高翠兰代理类。 3、买火车票不一定在火车站买，也可以去代售点。 4、一张支票或银行存单是账户中资金的代理。支票在市场交易中用来代替现金，并提供对签发人账号上资金的控制。 5、spring aop。
+
+优点： 1、职责清晰。 2、高扩展性。 3、智能化。
+
+缺点： 1、由于在客户端和真实主题之间增加了代理对象，因此有些类型的代理模式可能会造成请求的处理速度变慢。 2、实现代理模式需要额外的工作，有些代理模式的实现非常复杂。
+
+使用场景：按职责来划分，通常有以下使用场景： 1、远程代理。 2、虚拟代理。 3、Copy-on-Write 代理。 4、保护（Protect or Access）代理。 5、Cache代理。 6、防火墙（Firewall）代理。 7、同步化（Synchronization）代理。 8、智能引用（Smart Reference）代理。
+
+注意事项： 1、和适配器模式的区别：适配器模式主要改变所考虑对象的接口，而代理模式不能改变所代理类的接口。 2、和装饰器模式的区别：装饰器模式为了增强功能，而代理模式是为了加以控制。
+实现
+
+我们将创建一个 Image 接口和实现了 Image 接口的实体类。ProxyImage 是一个代理类，减少 RealImage 对象加载的内存占用。
+
+ProxyPatternDemo 类使用 ProxyImage 来获取要加载的 Image 对象，并按照需求进行显示。
+代理模式的 UML 图
+步骤 1
+
+创建一个接口。
+Image.java
+public interface Image {
+   void display();
+}
+步骤 2
+
+创建实现接口的实体类。
+RealImage.java
+public class RealImage implements Image {
+ 
+   private String fileName;
+ 
+   public RealImage(String fileName){
+      this.fileName = fileName;
+      loadFromDisk(fileName);
+   }
+ 
+   @Override
+   public void display() {
+      System.out.println("Displaying " + fileName);
+   }
+ 
+   private void loadFromDisk(String fileName){
+      System.out.println("Loading " + fileName);
+   }
+}
+ProxyImage.java
+public class ProxyImage implements Image{
+ 
+   private RealImage realImage;
+   private String fileName;
+ 
+   public ProxyImage(String fileName){
+      this.fileName = fileName;
+   }
+ 
+   @Override
+   public void display() {
+      if(realImage == null){
+         realImage = new RealImage(fileName);
+      }
+      realImage.display();
+   }
+}
+步骤 3
+
+当被请求时，使用 ProxyImage 来获取 RealImage 类的对象。
+ProxyPatternDemo.java
+public class ProxyPatternDemo {
+   
+   public static void main(String[] args) {
+      Image image = new ProxyImage("test_10mb.jpg");
+ 
+      // 图像将从磁盘加载
+      image.display(); 
+      System.out.println("");
+      // 图像不需要从磁盘加载
+      image.display();  
+   }
+}
+步骤 4
+
+执行程序，输出结果：
+
+Loading test_10mb.jpg
+Displaying test_10mb.jpg
+
+Displaying test_10mb.jpg
+
+    JDK 自带的动态代理
+        java.lang.reflect.Proxy:生成动态代理类和对象；
+        java.lang.reflect.InvocationHandler（处理器接口）：可以通过invoke方法实现
+
+    对真实角色的代理访问。
+
+    每次通过 Proxy 生成的代理类对象都要指定对应的处理器对象。
+
+    代码：
+
+    a) 接口：Subject.java
+
+    **
+     * @author gnehcgnaw
+     * @date 2018/11/5 19:29
+     */
+    public interface Subject {
+        public int sellBooks();
+
+        public String speak();
+    }
+
+    b)真实对象：RealSubject.java
+
+    /**
+     * @author gnehcgnaw
+     * @date 2018/11/5 18:54
+     */
+    public class RealSubject implements Subject{
+        @Override
+        public int sellBooks() {
+            System.out.println("卖书");
+            return 1 ;
+        }
+
+        @Override
+        public String speak() {
+            System.out.println("说话");
+            return "张三";
+        }
+    }
+
+    c)处理器对象：MyInvocationHandler.java
+
+    import java.lang.reflect.InvocationHandler;
+    import java.lang.reflect.Method;
+
+    /**
+     * 定义一个处理器
+     * @author gnehcgnaw
+     * @date 2018/11/5 19:26
+     */
+    public class MyInvocationHandler implements InvocationHandler {
+        /**
+         * 因为需要处理真实角色，所以要把真实角色传进来
+         */
+        Subject realSubject ;
+
+        public MyInvocationHandler(Subject realSubject) {
+            this.realSubject = realSubject;
+        }
+
+        /**
+         *
+         * @param proxy    代理类
+         * @param method    正在调用的方法
+         * @param args      方法的参数
+         * @return
+         * @throws Throwable
+         */
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            System.out.println("调用代理类");
+            if(method.getName().equals("sellBooks")){
+                int invoke = (int)method.invoke(realSubject, args);
+                System.out.println("调用的是卖书的方法");
+                return invoke ;
+            }else {
+                String string = (String) method.invoke(realSubject,args) ;
+                System.out.println("调用的是说话的方法");
+                return  string ;
+            }
+        }
+    }
+
+    d)调用端：Main.java
+
+    import java.lang.reflect.Proxy;
+
+    /**
+     * 调用类
+     * @author gnehcgnaw
+     * @date 2018/11/7 20:26
+     */
+    public class Client {
+        public static void main(String[] args) {
+            //真实对象
+            Subject realSubject =  new RealSubject();
+
+            MyInvocationHandler myInvocationHandler = new MyInvocationHandler(realSubject);
+            //代理对象
+            Subject proxyClass = (Subject) Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[]{Subject.class}, myInvocationHandler);
+
+            proxyClass.sellBooks();
+
+            proxyClass.speak();
+        }
+    }
+
+    Cglib 动态代理是针对代理的类, 动态生成一个子类, 然后子类覆盖代理类中的方法, 如果是private或是final类修饰的方法,则不会被重写。
+
+    CGLIB是一个功能强大，高性能的代码生成包。它为没有实现接口的类提供代理，为JDK的动态代理提供了很好的补充。通常可以使用Java的动态代理创建代理，但当要代理的类没有实现接口或者为了更好的性能，CGLIB是一个好的选择。
+
+    CGLIB作为一个开源项目，其代码托管在github，地址为：https://github.com/cglib/cglib
+
+    需要代理的类:
+
+    package cn.cpf.pattern.structure.proxy.cglib;
+    public class Engineer {
+        // 可以被代理
+        public void eat() {
+            System.out.println("工程师正在吃饭");
+        }
+
+        // final 方法不会被生成的字类覆盖
+        public final void work() {
+            System.out.println("工程师正在工作");
+        }
+
+        // private 方法不会被生成的字类覆盖
+        private void play() {
+            System.out.println("this engineer is playing game");
+        }
+    }
+
+    CGLIB 代理类:
+
+    package cn.cpf.pattern.structure.proxy.cglib;
+
+    import net.sf.cglib.proxy.Enhancer;
+    import net.sf.cglib.proxy.MethodInterceptor;
+    import net.sf.cglib.proxy.MethodProxy;
+    import java.lang.reflect.Method;
+
+    public class CglibProxy implements MethodInterceptor {
+        private Object target;
+
+        public CglibProxy(Object target) {
+            this.target = target;
+        }
+
+        @Override
+        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+            System.out.println("###   before invocation");
+            Object result = method.invoke(target, objects);
+            System.out.println("###   end invocation");
+            return result;
+        }
+
+        public static Object getProxy(Object target) {
+            Enhancer enhancer = new Enhancer();
+            // 设置需要代理的对象
+            enhancer.setSuperclass(target.getClass());
+            // 设置代理人
+            enhancer.setCallback(new CglibProxy(target));
+            return enhancer.create();
+        }
+    }
+
+    测试方法:
+
+    import java.lang.reflect.Method;
+    import java.util.Arrays;
+
+    public class CglibMainTest {
+        public static void main(String[] args) {
+            // 生成 Cglib 代理类
+            Engineer engineerProxy = (Engineer) CglibProxy.getProxy(new Engineer());
+            // 调用相关方法
+            engineerProxy.eat();
+        }
+    }
+
+    运行结果:
+
+    ###   before invocation
+    工程师正在吃饭
+    ###   end invocation
+
+设计模式 桥接模式
+
+桥接（Bridge）是用于把抽象化与实现化解耦，使得二者可以独立变化。这种类型的设计模式属于结构型模式，它通过提供抽象化和实现化之间的桥接结构，来实现二者的解耦。
+
+这种模式涉及到一个作为桥接的接口，使得实体类的功能独立于接口实现类。这两种类型的类可被结构化改变而互不影响。
+
+我们通过下面的实例来演示桥接模式（Bridge Pattern）的用法。其中，可以使用相同的抽象类方法但是不同的桥接实现类，来画出不同颜色的圆。
+介绍
+
+意图：将抽象部分与实现部分分离，使它们都可以独立的变化。
+
+主要解决：在有多种可能会变化的情况下，用继承会造成类爆炸问题，扩展起来不灵活。
+
+何时使用：实现系统可能有多个角度分类，每一种角度都可能变化。
+
+如何解决：把这种多角度分类分离出来，让它们独立变化，减少它们之间耦合。
+
+关键代码：抽象类依赖实现类。
+
+应用实例： 1、猪八戒从天蓬元帅转世投胎到猪，转世投胎的机制将尘世划分为两个等级，即：灵魂和肉体，前者相当于抽象化，后者相当于实现化。生灵通过功能的委派，调用肉体对象的功能，使得生灵可以动态地选择。 2、墙上的开关，可以看到的开关是抽象的，不用管里面具体怎么实现的。
+
+优点： 1、抽象和实现的分离。 2、优秀的扩展能力。 3、实现细节对客户透明。
+
+缺点：桥接模式的引入会增加系统的理解与设计难度，由于聚合关联关系建立在抽象层，要求开发者针对抽象进行设计与编程。
+
+使用场景： 1、如果一个系统需要在构件的抽象化角色和具体化角色之间增加更多的灵活性，避免在两个层次之间建立静态的继承联系，通过桥接模式可以使它们在抽象层建立一个关联关系。 2、对于那些不希望使用继承或因为多层次继承导致系统类的个数急剧增加的系统，桥接模式尤为适用。 3、一个类存在两个独立变化的维度，且这两个维度都需要进行扩展。
+
+注意事项：对于两个独立变化的维度，使用桥接模式再适合不过了。
+实现
+
+我们有一个作为桥接实现的 DrawAPI 接口和实现了 DrawAPI 接口的实体类 RedCircle、GreenCircle。Shape 是一个抽象类，将使用 DrawAPI 的对象。BridgePatternDemo 类使用 Shape 类来画出不同颜色的圆。
+桥接模式的 UML 图
+步骤 1
+
+创建桥接实现接口。
+DrawAPI.java
+public interface DrawAPI {
+   public void drawCircle(int radius, int x, int y);
+}
+步骤 2
+
+创建实现了 DrawAPI 接口的实体桥接实现类。
+RedCircle.java
+public class RedCircle implements DrawAPI {
+   @Override
+   public void drawCircle(int radius, int x, int y) {
+      System.out.println("Drawing Circle[ color: red, radius: "
+         + radius +", x: " +x+", "+ y +"]");
+   }
+}
+GreenCircle.java
+public class GreenCircle implements DrawAPI {
+   @Override
+   public void drawCircle(int radius, int x, int y) {
+      System.out.println("Drawing Circle[ color: green, radius: "
+         + radius +", x: " +x+", "+ y +"]");
+   }
+}
+步骤 3
+
+使用 DrawAPI 接口创建抽象类 Shape。
+Shape.java
+public abstract class Shape {
+   protected DrawAPI drawAPI;
+   protected Shape(DrawAPI drawAPI){
+      this.drawAPI = drawAPI;
+   }
+   public abstract void draw();  
+}
+步骤 4
+
+创建实现了 Shape 抽象类的实体类。
+Circle.java
+public class Circle extends Shape {
+   private int x, y, radius;
+ 
+   public Circle(int x, int y, int radius, DrawAPI drawAPI) {
+      super(drawAPI);
+      this.x = x;  
+      this.y = y;  
+      this.radius = radius;
+   }
+ 
+   public void draw() {
+      drawAPI.drawCircle(radius,x,y);
+   }
+}
+步骤 5
+
+使用 Shape 和 DrawAPI 类画出不同颜色的圆。
+BridgePatternDemo.java
+public class BridgePatternDemo {
+   public static void main(String[] args) {
+      Shape redCircle = new Circle(100,100, 10, new RedCircle());
+      Shape greenCircle = new Circle(100,100, 10, new GreenCircle());
+ 
+      redCircle.draw();
+      greenCircle.draw();
+   }
+}
+步骤 6
+
+执行程序，输出结果：
+
+Drawing Circle[ color: red, radius: 10, x: 100, 100]
+Drawing Circle[  color: green, radius: 10, x: 100, 100]
+
+设计模式 组合模式
+
+组合模式（Composite Pattern），又叫部分整体模式，是用于把一组相似的对象当作一个单一的对象。组合模式依据树形结构来组合对象，用来表示部分以及整体层次。这种类型的设计模式属于结构型模式，它创建了对象组的树形结构。
+
+这种模式创建了一个包含自己对象组的类。该类提供了修改相同对象组的方式。
+
+我们通过下面的实例来演示组合模式的用法。实例演示了一个组织中员工的层次结构。
+介绍
+
+意图：将对象组合成树形结构以表示"部分-整体"的层次结构。组合模式使得用户对单个对象和组合对象的使用具有一致性。
+
+主要解决：它在我们树型结构的问题中，模糊了简单元素和复杂元素的概念，客户程序可以像处理简单元素一样来处理复杂元素，从而使得客户程序与复杂元素的内部结构解耦。
+
+何时使用： 1、您想表示对象的部分-整体层次结构（树形结构）。 2、您希望用户忽略组合对象与单个对象的不同，用户将统一地使用组合结构中的所有对象。
+
+如何解决：树枝和叶子实现统一接口，树枝内部组合该接口。
+
+关键代码：树枝内部组合该接口，并且含有内部属性 List，里面放 Component。
+
+应用实例： 1、算术表达式包括操作数、操作符和另一个操作数，其中，另一个操作符也可以是操作数、操作符和另一个操作数。 2、在 JAVA AWT 和 SWING 中，对于 Button 和 Checkbox 是树叶，Container 是树枝。
+
+优点： 1、高层模块调用简单。 2、节点自由增加。
+
+缺点：在使用组合模式时，其叶子和树枝的声明都是实现类，而不是接口，违反了依赖倒置原则。
+
+使用场景：部分、整体场景，如树形菜单，文件、文件夹的管理。
+
+注意事项：定义时为具体类。
+实现
+
+我们有一个类 Employee，该类被当作组合模型类。CompositePatternDemo 类使用 Employee 类来添加部门层次结构，并打印所有员工。
+
+组合模式的 UML 图
+步骤 1
+
+创建 Employee 类，该类带有 Employee 对象的列表。
+Employee.java
+import java.util.ArrayList;
+import java.util.List;
+ 
+public class Employee {
+   private String name;
+   private String dept;
+   private int salary;
+   private List<Employee> subordinates;
+ 
+   //构造函数
+   public Employee(String name,String dept, int sal) {
+      this.name = name;
+      this.dept = dept;
+      this.salary = sal;
+      subordinates = new ArrayList<Employee>();
+   }
+ 
+   public void add(Employee e) {
+      subordinates.add(e);
+   }
+ 
+   public void remove(Employee e) {
+      subordinates.remove(e);
+   }
+ 
+   public List<Employee> getSubordinates(){
+     return subordinates;
+   }
+ 
+   public String toString(){
+      return ("Employee :[ Name : "+ name 
+      +", dept : "+ dept + ", salary :"
+      + salary+" ]");
+   }   
+}
+步骤 2
+
+使用 Employee 类来创建和打印员工的层次结构。
+CompositePatternDemo.java
+public class CompositePatternDemo {
+   public static void main(String[] args) {
+      Employee CEO = new Employee("John","CEO", 30000);
+ 
+      Employee headSales = new Employee("Robert","Head Sales", 20000);
+ 
+      Employee headMarketing = new Employee("Michel","Head Marketing", 20000);
+ 
+      Employee clerk1 = new Employee("Laura","Marketing", 10000);
+      Employee clerk2 = new Employee("Bob","Marketing", 10000);
+ 
+      Employee salesExecutive1 = new Employee("Richard","Sales", 10000);
+      Employee salesExecutive2 = new Employee("Rob","Sales", 10000);
+ 
+      CEO.add(headSales);
+      CEO.add(headMarketing);
+ 
+      headSales.add(salesExecutive1);
+      headSales.add(salesExecutive2);
+ 
+      headMarketing.add(clerk1);
+      headMarketing.add(clerk2);
+ 
+      //打印该组织的所有员工
+      System.out.println(CEO); 
+      for (Employee headEmployee : CEO.getSubordinates()) {
+         System.out.println(headEmployee);
+         for (Employee employee : headEmployee.getSubordinates()) {
+            System.out.println(employee);
+         }
+      }        
+   }
+}
+步骤 3
+
+执行程序，输出结果为：
+
+Employee :[ Name : John, dept : CEO, salary :30000 ]
+Employee :[ Name : Robert, dept : Head Sales, salary :20000 ]
+Employee :[ Name : Richard, dept : Sales, salary :10000 ]
+Employee :[ Name : Rob, dept : Sales, salary :10000 ]
+Employee :[ Name : Michel, dept : Head Marketing, salary :20000 ]
+Employee :[ Name : Laura, dept : Marketing, salary :10000 ]
+Employee :[ Name : Bob, dept : Marketing, salary :10000 ]
+
+设计模式 迭代器模式
+
+迭代器模式（Iterator Pattern）是 Java 和 .Net 编程环境中非常常用的设计模式。这种模式用于顺序访问集合对象的元素，不需要知道集合对象的底层表示。
+
+迭代器模式属于行为型模式。
+介绍
+
+意图：提供一种方法顺序访问一个聚合对象中各个元素, 而又无须暴露该对象的内部表示。
+
+主要解决：不同的方式来遍历整个整合对象。
+
+何时使用：遍历一个聚合对象。
+
+如何解决：把在元素之间游走的责任交给迭代器，而不是聚合对象。
+
+关键代码：定义接口：hasNext, next。
+
+应用实例：JAVA 中的 iterator。
+
+优点： 1、它支持以不同的方式遍历一个聚合对象。 2、迭代器简化了聚合类。 3、在同一个聚合上可以有多个遍历。 4、在迭代器模式中，增加新的聚合类和迭代器类都很方便，无须修改原有代码。
+
+缺点：由于迭代器模式将存储数据和遍历数据的职责分离，增加新的聚合类需要对应增加新的迭代器类，类的个数成对增加，这在一定程度上增加了系统的复杂性。
+
+使用场景： 1、访问一个聚合对象的内容而无须暴露它的内部表示。 2、需要为聚合对象提供多种遍历方式。 3、为遍历不同的聚合结构提供一个统一的接口。
+
+注意事项：迭代器模式就是分离了集合对象的遍历行为，抽象出一个迭代器类来负责，这样既可以做到不暴露集合的内部结构，又可让外部代码透明地访问集合内部的数据。
+实现
+
+我们将创建一个叙述导航方法的 Iterator 接口和一个返回迭代器的 Container 接口。实现了 Container 接口的实体类将负责实现 Iterator 接口。
+
+IteratorPatternDemo，我们的演示类使用实体类 NamesRepository 来打印 NamesRepository 中存储为集合的 Names。
+迭代器模式的 UML 图
+步骤 1
+
+创建接口:
+Iterator.java
+public interface Iterator {
+   public boolean hasNext();
+   public Object next();
+}
+Container.java
+public interface Container {
+   public Iterator getIterator();
+}
+步骤 2
+
+创建实现了 Container 接口的实体类。该类有实现了 Iterator 接口的内部类 NameIterator。
+NameRepository.java
+public class NameRepository implements Container {
+   public String[] names = {"Robert" , "John" ,"Julie" , "Lora"};
+ 
+   @Override
+   public Iterator getIterator() {
+      return new NameIterator();
+   }
+ 
+   private class NameIterator implements Iterator {
+ 
+      int index;
+ 
+      @Override
+      public boolean hasNext() {
+         if(index < names.length){
+            return true;
+         }
+         return false;
+      }
+ 
+      @Override
+      public Object next() {
+         if(this.hasNext()){
+            return names[index++];
+         }
+         return null;
+      }     
+   }
+}
+步骤 3
+
+使用 NameRepository 来获取迭代器，并打印名字。
+IteratorPatternDemo.java
+public class IteratorPatternDemo {
+   
+   public static void main(String[] args) {
+      NameRepository namesRepository = new NameRepository();
+ 
+      for(Iterator iter = namesRepository.getIterator(); iter.hasNext();){
+         String name = (String)iter.next();
+         System.out.println("Name : " + name);
+      }  
+   }
+}
+步骤 4
+
+执行程序，输出结果：
+
+Name : Robert
+Name : John
+Name : Julie
+Name : Lora
+
+设计模式 中介者模式
+
+中介者模式（Mediator Pattern）是用来降低多个对象和类之间的通信复杂性。这种模式提供了一个中介类，该类通常处理不同类之间的通信，并支持松耦合，使代码易于维护。中介者模式属于行为型模式。
+介绍
+
+意图：用一个中介对象来封装一系列的对象交互，中介者使各对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。
+
+主要解决：对象与对象之间存在大量的关联关系，这样势必会导致系统的结构变得很复杂，同时若一个对象发生改变，我们也需要跟踪与之相关联的对象，同时做出相应的处理。
+
+何时使用：多个类相互耦合，形成了网状结构。
+
+如何解决：将上述网状结构分离为星型结构。
+
+关键代码：对象 Colleague 之间的通信封装到一个类中单独处理。
+
+应用实例： 1、中国加入 WTO 之前是各个国家相互贸易，结构复杂，现在是各个国家通过 WTO 来互相贸易。 2、机场调度系统。 3、MVC 框架，其中C（控制器）就是 M（模型）和 V（视图）的中介者。
+
+优点： 1、降低了类的复杂度，将一对多转化成了一对一。 2、各个类之间的解耦。 3、符合迪米特原则。
+
+缺点：中介者会庞大，变得复杂难以维护。
+
+使用场景： 1、系统中对象之间存在比较复杂的引用关系，导致它们之间的依赖关系结构混乱而且难以复用该对象。 2、想通过一个中间类来封装多个类中的行为，而又不想生成太多的子类。
+
+注意事项：不应当在职责混乱的时候使用。
+实现
+
+我们通过聊天室实例来演示中介者模式。实例中，多个用户可以向聊天室发送消息，聊天室向所有的用户显示消息。我们将创建两个类 ChatRoom 和 User。User 对象使用 ChatRoom 方法来分享他们的消息。
+
+MediatorPatternDemo，我们的演示类使用 User 对象来显示他们之间的通信。
+中介者模式的 UML 图
+步骤 1
+
+创建中介类。
+ChatRoom.java
+import java.util.Date;
+ 
+public class ChatRoom {
+   public static void showMessage(User user, String message){
+      System.out.println(new Date().toString()
+         + " [" + user.getName() +"] : " + message);
+   }
+}
+步骤 2
+
+创建 user 类。
+User.java
+public class User {
+   private String name;
+ 
+   public String getName() {
+      return name;
+   }
+ 
+   public void setName(String name) {
+      this.name = name;
+   }
+ 
+   public User(String name){
+      this.name  = name;
+   }
+ 
+   public void sendMessage(String message){
+      ChatRoom.showMessage(this,message);
+   }
+}
+步骤 3
+
+使用 User 对象来显示他们之间的通信。
+MediatorPatternDemo.java
+public class MediatorPatternDemo {
+   public static void main(String[] args) {
+      User robert = new User("Robert");
+      User john = new User("John");
+ 
+      robert.sendMessage("Hi! John!");
+      john.sendMessage("Hello! Robert!");
+   }
+}
+步骤 4
+
+执行程序，输出结果：
+
+Thu Jan 31 16:05:46 IST 2013 [Robert] : Hi! John!
+Thu Jan 31 16:05:46 IST 2013 [John] : Hello! Robert!
+
+设计模式 备忘录模式
+
+备忘录模式（Memento Pattern）保存一个对象的某个状态，以便在适当的时候恢复对象。备忘录模式属于行为型模式。
+介绍
+
+意图：在不破坏封装性的前提下，捕获一个对象的内部状态，并在该对象之外保存这个状态。
+
+主要解决：所谓备忘录模式就是在不破坏封装的前提下，捕获一个对象的内部状态，并在该对象之外保存这个状态，这样可以在以后将对象恢复到原先保存的状态。
+
+何时使用：很多时候我们总是需要记录一个对象的内部状态，这样做的目的就是为了允许用户取消不确定或者错误的操作，能够恢复到他原先的状态，使得他有"后悔药"可吃。
+
+如何解决：通过一个备忘录类专门存储对象状态。
+
+关键代码：客户不与备忘录类耦合，与备忘录管理类耦合。
+
+应用实例： 1、后悔药。 2、打游戏时的存档。 3、Windows 里的 ctri + z。 4、IE 中的后退。 4、数据库的事务管理。
+
+优点： 1、给用户提供了一种可以恢复状态的机制，可以使用户能够比较方便地回到某个历史的状态。 2、实现了信息的封装，使得用户不需要关心状态的保存细节。
+
+缺点：消耗资源。如果类的成员变量过多，势必会占用比较大的资源，而且每一次保存都会消耗一定的内存。
+
+使用场景： 1、需要保存/恢复数据的相关状态场景。 2、提供一个可回滚的操作。
+
+注意事项： 1、为了符合迪米特原则，还要增加一个管理备忘录的类。 2、为了节约内存，可使用原型模式+备忘录模式。
+实现
+
+备忘录模式使用三个类 Memento、Originator 和 CareTaker。Memento 包含了要被恢复的对象的状态。Originator 创建并在 Memento 对象中存储状态。Caretaker 对象负责从 Memento 中恢复对象的状态。
+
+MementoPatternDemo，我们的演示类使用 CareTaker 和 Originator 对象来显示对象的状态恢复。
+备忘录模式的 UML 图
+步骤 1
+
+创建 Memento 类。
+Memento.java
+public class Memento {
+   private String state;
+ 
+   public Memento(String state){
+      this.state = state;
+   }
+ 
+   public String getState(){
+      return state;
+   }  
+}
+步骤 2
+
+创建 Originator 类。
+Originator.java
+public class Originator {
+   private String state;
+ 
+   public void setState(String state){
+      this.state = state;
+   }
+ 
+   public String getState(){
+      return state;
+   }
+ 
+   public Memento saveStateToMemento(){
+      return new Memento(state);
+   }
+ 
+   public void getStateFromMemento(Memento Memento){
+      state = Memento.getState();
+   }
+}
+步骤 3
+
+创建 CareTaker 类。
+CareTaker.java
+import java.util.ArrayList;
+import java.util.List;
+ 
+public class CareTaker {
+   private List<Memento> mementoList = new ArrayList<Memento>();
+ 
+   public void add(Memento state){
+      mementoList.add(state);
+   }
+ 
+   public Memento get(int index){
+      return mementoList.get(index);
+   }
+}
+步骤 4
+
+使用 CareTaker 和 Originator 对象。
+MementoPatternDemo.java
+public class MementoPatternDemo {
+   public static void main(String[] args) {
+      Originator originator = new Originator();
+      CareTaker careTaker = new CareTaker();
+      originator.setState("State #1");
+      careTaker.add(originator.saveStateToMemento());
+      originator.setState("State #2");
+      careTaker.add(originator.saveStateToMemento());
+      originator.setState("State #3");
+      careTaker.add(originator.saveStateToMemento());
+      originator.setState("State #4");
+ 
+      System.out.println("Current State: " + originator.getState());    
+      originator.getStateFromMemento(careTaker.get(0));
+      System.out.println("First saved State: " + originator.getState());
+      originator.getStateFromMemento(careTaker.get(1));
+      System.out.println("Second saved State: " + originator.getState());
+      originator.getStateFromMemento(careTaker.get(2));
+      System.out.println("Third saved State: " + originator.getState());
+   }
+}
+步骤 5
+
+验证输出。
+
+Current State: State #4
+First saved State: State #1
+Second saved State: State #2
+Third saved State: State #3
+
+设计模式 解释器模式
+
+解释器模式（Interpreter Pattern）提供了评估语言的语法或表达式的方式，它属于行为型模式。这种模式实现了一个表达式接口，该接口解释一个特定的上下文。这种模式被用在 SQL 解析、符号处理引擎等。
+介绍
+
+意图：给定一个语言，定义它的文法表示，并定义一个解释器，这个解释器使用该标识来解释语言中的句子。
+
+主要解决：对于一些固定文法构建一个解释句子的解释器。
+
+何时使用：如果一种特定类型的问题发生的频率足够高，那么可能就值得将该问题的各个实例表述为一个简单语言中的句子。这样就可以构建一个解释器，该解释器通过解释这些句子来解决该问题。
+
+如何解决：构建语法树，定义终结符与非终结符。
+
+关键代码：构建环境类，包含解释器之外的一些全局信息，一般是 HashMap。
+
+应用实例：编译器、运算表达式计算。
+
+优点： 1、可扩展性比较好，灵活。 2、增加了新的解释表达式的方式。 3、易于实现简单文法。
+
+缺点： 1、可利用场景比较少。 2、对于复杂的文法比较难维护。 3、解释器模式会引起类膨胀。 4、解释器模式采用递归调用方法。
+
+使用场景： 1、可以将一个需要解释执行的语言中的句子表示为一个抽象语法树。 2、一些重复出现的问题可以用一种简单的语言来进行表达。 3、一个简单语法需要解释的场景。
+
+注意事项：可利用场景比较少，JAVA 中如果碰到可以用 expression4J 代替。
+实现
+
+我们将创建一个接口 Expression 和实现了 Expression 接口的实体类。定义作为上下文中主要解释器的 TerminalExpression 类。其他的类 OrExpression、AndExpression 用于创建组合式表达式。
+
+InterpreterPatternDemo，我们的演示类使用 Expression 类创建规则和演示表达式的解析。
+解释器模式的 UML 图
+步骤 1
+
+创建一个表达式接口。
+Expression.java
+public interface Expression {
+   public boolean interpret(String context);
+}
+步骤 2
+
+创建实现了上述接口的实体类。
+TerminalExpression.java
+public class TerminalExpression implements Expression {
+   
+   private String data;
+ 
+   public TerminalExpression(String data){
+      this.data = data; 
+   }
+ 
+   @Override
+   public boolean interpret(String context) {
+      if(context.contains(data)){
+         return true;
+      }
+      return false;
+   }
+}
+OrExpression.java
+public class OrExpression implements Expression {
+    
+   private Expression expr1 = null;
+   private Expression expr2 = null;
+ 
+   public OrExpression(Expression expr1, Expression expr2) { 
+      this.expr1 = expr1;
+      this.expr2 = expr2;
+   }
+ 
+   @Override
+   public boolean interpret(String context) {      
+      return expr1.interpret(context) || expr2.interpret(context);
+   }
+}
+AndExpression.java
+public class AndExpression implements Expression {
+    
+   private Expression expr1 = null;
+   private Expression expr2 = null;
+ 
+   public AndExpression(Expression expr1, Expression expr2) { 
+      this.expr1 = expr1;
+      this.expr2 = expr2;
+   }
+ 
+   @Override
+   public boolean interpret(String context) {      
+      return expr1.interpret(context) && expr2.interpret(context);
+   }
+}
+步骤 3
+
+InterpreterPatternDemo 使用 Expression 类来创建规则，并解析它们。
+InterpreterPatternDemo.java
+public class InterpreterPatternDemo {
+ 
+   //规则：Robert 和 John 是男性
+   public static Expression getMaleExpression(){
+      Expression robert = new TerminalExpression("Robert");
+      Expression john = new TerminalExpression("John");
+      return new OrExpression(robert, john);    
+   }
+ 
+   //规则：Julie 是一个已婚的女性
+   public static Expression getMarriedWomanExpression(){
+      Expression julie = new TerminalExpression("Julie");
+      Expression married = new TerminalExpression("Married");
+      return new AndExpression(julie, married);    
+   }
+ 
+   public static void main(String[] args) {
+      Expression isMale = getMaleExpression();
+      Expression isMarriedWoman = getMarriedWomanExpression();
+ 
+      System.out.println("John is male? " + isMale.interpret("John"));
+      System.out.println("Julie is a married women? " 
+      + isMarriedWoman.interpret("Married Julie"));
+   }
+}
+步骤 4
+
+执行程序，输出结果：
+
+John is male? true
+Julie is a married women? true
+
+设计模式 责任链模式
+
+顾名思义，责任链模式（Chain of Responsibility Pattern）为请求创建了一个接收者对象的链。这种模式给予请求的类型，对请求的发送者和接收者进行解耦。这种类型的设计模式属于行为型模式。
+
+在这种模式中，通常每个接收者都包含对另一个接收者的引用。如果一个对象不能处理该请求，那么它会把相同的请求传给下一个接收者，依此类推。
+介绍
+
+意图：避免请求发送者与接收者耦合在一起，让多个对象都有可能接收请求，将这些对象连接成一条链，并且沿着这条链传递请求，直到有对象处理它为止。
+
+主要解决：职责链上的处理者负责处理请求，客户只需要将请求发送到职责链上即可，无须关心请求的处理细节和请求的传递，所以职责链将请求的发送者和请求的处理者解耦了。
+
+何时使用：在处理消息的时候以过滤很多道。
+
+如何解决：拦截的类都实现统一接口。
+
+关键代码：Handler 里面聚合它自己，在 HandlerRequest 里判断是否合适，如果没达到条件则向下传递，向谁传递之前 set 进去。
+
+应用实例： 1、红楼梦中的"击鼓传花"。 2、JS 中的事件冒泡。 3、JAVA WEB 中 Apache Tomcat 对 Encoding 的处理，Struts2 的拦截器，jsp servlet 的 Filter。
+
+优点： 1、降低耦合度。它将请求的发送者和接收者解耦。 2、简化了对象。使得对象不需要知道链的结构。 3、增强给对象指派职责的灵活性。通过改变链内的成员或者调动它们的次序，允许动态地新增或者删除责任。 4、增加新的请求处理类很方便。
+
+缺点： 1、不能保证请求一定被接收。 2、系统性能将受到一定影响，而且在进行代码调试时不太方便，可能会造成循环调用。 3、可能不容易观察运行时的特征，有碍于除错。
+
+使用场景： 1、有多个对象可以处理同一个请求，具体哪个对象处理该请求由运行时刻自动确定。 2、在不明确指定接收者的情况下，向多个对象中的一个提交一个请求。 3、可动态指定一组对象处理请求。
+
+注意事项：在 JAVA WEB 中遇到很多应用。
+实现
+
+我们创建抽象类 AbstractLogger，带有详细的日志记录级别。然后我们创建三种类型的记录器，都扩展了 AbstractLogger。每个记录器消息的级别是否属于自己的级别，如果是则相应地打印出来，否则将不打印并把消息传给下一个记录器。
+责任链模式的 UML 图
+步骤 1
+
+创建抽象的记录器类。
+AbstractLogger.java
+public abstract class AbstractLogger {
+   public static int INFO = 1;
+   public static int DEBUG = 2;
+   public static int ERROR = 3;
+ 
+   protected int level;
+ 
+   //责任链中的下一个元素
+   protected AbstractLogger nextLogger;
+ 
+   public void setNextLogger(AbstractLogger nextLogger){
+      this.nextLogger = nextLogger;
+   }
+ 
+   public void logMessage(int level, String message){
+      if(this.level <= level){
+         write(message);
+      }
+      if(nextLogger !=null){
+         nextLogger.logMessage(level, message);
+      }
+   }
+ 
+   abstract protected void write(String message);
+   
+}
+步骤 2
+
+创建扩展了该记录器类的实体类。
+ConsoleLogger.java
+public class ConsoleLogger extends AbstractLogger {
+ 
+   public ConsoleLogger(int level){
+      this.level = level;
+   }
+ 
+   @Override
+   protected void write(String message) {    
+      System.out.println("Standard Console::Logger: " + message);
+   }
+}
+ErrorLogger.java
+public class ErrorLogger extends AbstractLogger {
+ 
+   public ErrorLogger(int level){
+      this.level = level;
+   }
+ 
+   @Override
+   protected void write(String message) {    
+      System.out.println("Error Console::Logger: " + message);
+   }
+}
+FileLogger.java
+public class FileLogger extends AbstractLogger {
+ 
+   public FileLogger(int level){
+      this.level = level;
+   }
+ 
+   @Override
+   protected void write(String message) {    
+      System.out.println("File::Logger: " + message);
+   }
+}
+步骤 3
+
+创建不同类型的记录器。赋予它们不同的错误级别，并在每个记录器中设置下一个记录器。每个记录器中的下一个记录器代表的是链的一部分。
+ChainPatternDemo.java
+public class ChainPatternDemo {
+   
+   private static AbstractLogger getChainOfLoggers(){
+ 
+      AbstractLogger errorLogger = new ErrorLogger(AbstractLogger.ERROR);
+      AbstractLogger fileLogger = new FileLogger(AbstractLogger.DEBUG);
+      AbstractLogger consoleLogger = new ConsoleLogger(AbstractLogger.INFO);
+ 
+      errorLogger.setNextLogger(fileLogger);
+      fileLogger.setNextLogger(consoleLogger);
+ 
+      return errorLogger;  
+   }
+ 
+   public static void main(String[] args) {
+      AbstractLogger loggerChain = getChainOfLoggers();
+ 
+      loggerChain.logMessage(AbstractLogger.INFO, "This is an information.");
+ 
+      loggerChain.logMessage(AbstractLogger.DEBUG, 
+         "This is a debug level information.");
+ 
+      loggerChain.logMessage(AbstractLogger.ERROR, 
+         "This is an error information.");
+   }
+}
+步骤 4
+
+执行程序，输出结果：
+
+Standard Console::Logger: This is an information.
+File::Logger: This is a debug level information.
+Standard Console::Logger: This is a debug level information.
+Error Console::Logger: This is an error information.
+File::Logger: This is an error information.
+Standard Console::Logger: This is an error information.
+
+设计模式 访问者模式
+
+在访问者模式（Visitor Pattern）中，我们使用了一个访问者类，它改变了元素类的执行算法。通过这种方式，元素的执行算法可以随着访问者改变而改变。这种类型的设计模式属于行为型模式。根据模式，元素对象已接受访问者对象，这样访问者对象就可以处理元素对象上的操作。
+介绍
+
+意图：主要将数据结构与数据操作分离。
+
+主要解决：稳定的数据结构和易变的操作耦合问题。
+
+何时使用：需要对一个对象结构中的对象进行很多不同的并且不相关的操作，而需要避免让这些操作"污染"这些对象的类，使用访问者模式将这些封装到类中。
+
+如何解决：在被访问的类里面加一个对外提供接待访问者的接口。
+
+关键代码：在数据基础类里面有一个方法接受访问者，将自身引用传入访问者。
+
+应用实例：您在朋友家做客，您是访问者，朋友接受您的访问，您通过朋友的描述，然后对朋友的描述做出一个判断，这就是访问者模式。
+
+优点： 1、符合单一职责原则。 2、优秀的扩展性。 3、灵活性。
+
+缺点： 1、具体元素对访问者公布细节，违反了迪米特原则。 2、具体元素变更比较困难。 3、违反了依赖倒置原则，依赖了具体类，没有依赖抽象。
+
+使用场景： 1、对象结构中对象对应的类很少改变，但经常需要在此对象结构上定义新的操作。 2、需要对一个对象结构中的对象进行很多不同的并且不相关的操作，而需要避免让这些操作"污染"这些对象的类，也不希望在增加新操作时修改这些类。
+
+注意事项：访问者可以对功能进行统一，可以做报表、UI、拦截器与过滤器。
+实现
+
+我们将创建一个定义接受操作的 ComputerPart 接口。Keyboard、Mouse、Monitor 和 Computer 是实现了 ComputerPart 接口的实体类。我们将定义另一个接口 ComputerPartVisitor，它定义了访问者类的操作。Computer 使用实体访问者来执行相应的动作。
+
+VisitorPatternDemo，我们的演示类使用 Computer、ComputerPartVisitor 类来演示访问者模式的用法。
+访问者模式的 UML 图
+步骤 1
+
+定义一个表示元素的接口。
+ComputerPart.java
+public interface ComputerPart {
+   public void accept(ComputerPartVisitor computerPartVisitor);
+}
+步骤 2
+
+创建扩展了上述类的实体类。
+Keyboard.java
+public class Keyboard  implements ComputerPart {
+ 
+   @Override
+   public void accept(ComputerPartVisitor computerPartVisitor) {
+      computerPartVisitor.visit(this);
+   }
+}
+Monitor.java
+public class Monitor  implements ComputerPart {
+ 
+   @Override
+   public void accept(ComputerPartVisitor computerPartVisitor) {
+      computerPartVisitor.visit(this);
+   }
+}
+Mouse.java
+public class Mouse  implements ComputerPart {
+ 
+   @Override
+   public void accept(ComputerPartVisitor computerPartVisitor) {
+      computerPartVisitor.visit(this);
+   }
+}
+Computer.java
+public class Computer implements ComputerPart {
+   
+   ComputerPart[] parts;
+ 
+   public Computer(){
+      parts = new ComputerPart[] {new Mouse(), new Keyboard(), new Monitor()};      
+   } 
+ 
+ 
+   @Override
+   public void accept(ComputerPartVisitor computerPartVisitor) {
+      for (int i = 0; i < parts.length; i++) {
+         parts[i].accept(computerPartVisitor);
+      }
+      computerPartVisitor.visit(this);
+   }
+}
+步骤 3
+
+定义一个表示访问者的接口。
+ComputerPartVisitor.java
+public interface ComputerPartVisitor {
+   public void visit(Computer computer);
+   public void visit(Mouse mouse);
+   public void visit(Keyboard keyboard);
+   public void visit(Monitor monitor);
+}
+步骤 4
+
+创建实现了上述类的实体访问者。
+ComputerPartDisplayVisitor.java
+public class ComputerPartDisplayVisitor implements ComputerPartVisitor {
+ 
+   @Override
+   public void visit(Computer computer) {
+      System.out.println("Displaying Computer.");
+   }
+ 
+   @Override
+   public void visit(Mouse mouse) {
+      System.out.println("Displaying Mouse.");
+   }
+ 
+   @Override
+   public void visit(Keyboard keyboard) {
+      System.out.println("Displaying Keyboard.");
+   }
+ 
+   @Override
+   public void visit(Monitor monitor) {
+      System.out.println("Displaying Monitor.");
+   }
+}
+步骤 5
+
+使用 ComputerPartDisplayVisitor 来显示 Computer 的组成部分。
+VisitorPatternDemo.java
+public class VisitorPatternDemo {
+   public static void main(String[] args) {
+ 
+      ComputerPart computer = new Computer();
+      computer.accept(new ComputerPartDisplayVisitor());
+   }
+}
+步骤 6
+
+执行程序，输出结果：
+
+Displaying Mouse.
+Displaying Keyboard.
+Displaying Monitor.
+Displaying Computer.
